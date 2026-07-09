@@ -75,7 +75,13 @@ export default function AdminPage() {
 
   useEffect(() => {
     fetchData();
-  }, []);
+
+    const intervalId = setInterval(() => {
+      fetchData();
+    }, 120000);
+
+    return () => clearInterval(intervalId);
+  }, [selectedBooking]);
 
   const filteredBookings = useMemo(() => {
     return bookings.filter((booking) => {
