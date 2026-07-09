@@ -1,26 +1,18 @@
 export function selectVehicle(passengers, luggage) {
-  if (passengers >= 8) {
+  if (passengers >= 5) {
     return {
       type: "choice",
       title: "Choose your best option",
       options: [
         {
           name: "Mercedes-Benz Vito",
-          description: "Best for large groups with luggage.",
+          description: "Mercedes Vito Van (Best for groups of 5-8 passengers).",
         },
         {
           name: "2 Electric Taxis",
           description: "Two premium electric vehicles for extra comfort.",
         },
       ],
-    };
-  }
-
-  if (passengers >= 5 || luggage >= 4) {
-    return {
-      type: "single",
-      name: "Volkswagen ID.6 or BYD Tang",
-      description: "Recommended for families and medium groups.",
     };
   }
 

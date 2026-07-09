@@ -63,7 +63,7 @@ export default function BookingWizard() {
 
   const estimatedPrice =
     pickupPlace && dropoffPlace
-      ? calculatePrice(routeInfo?.distanceKm || 0, pickup, dropoff)
+      ? calculatePrice(routeInfo?.distanceKm || 0, pickup, dropoff, passengers)
       : null;
 
   const canStep1 =
@@ -273,6 +273,19 @@ export default function BookingWizard() {
             <Info label="Luggage" value={luggage} />
             <Info label="Distance" value={routeInfo?.distanceText} />
             <Info label="Duration" value={routeInfo?.durationText} />
+          </div>
+
+          <div className="mt-4 border-t border-white/10 pt-3 space-y-1">
+            <p className="text-[10px] text-white/50 uppercase tracking-wider font-semibold">Recommended Transfer Option</p>
+            {passengers >= 5 && passengers <= 8 ? (
+              <p className="text-[#00D084] font-bold text-xs">
+                🚐 1 Mercedes-Benz Vito (Minivan) OR 🚗🚗 2 Electric Taxis
+              </p>
+            ) : (
+              <p className="text-white font-bold text-xs">
+                🚗 Toyota bZ4X (Premium Electric Sedan)
+              </p>
+            )}
           </div>
 
           <div className="mt-6 rounded-2xl bg-[#00D084]/15 p-5">

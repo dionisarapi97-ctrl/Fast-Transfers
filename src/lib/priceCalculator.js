@@ -26,7 +26,12 @@ function findFixedFare(pickupAddress = "", dropoffAddress = "") {
   );
 }
 
-export function calculatePrice(distanceKm, pickupAddress = "", dropoffAddress = "") {
+export function calculatePrice(distanceKm, pickupAddress = "", dropoffAddress = "", passengers = 1) {
+  if (passengers >= 5 && passengers <= 8) {
+    const vanPrice = distanceKm * 1.8;
+    return Math.max(30, Math.round(vanPrice));
+  }
+
   const fixedFare = findFixedFare(pickupAddress, dropoffAddress);
 
   if (fixedFare) {

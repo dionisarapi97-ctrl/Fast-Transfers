@@ -84,7 +84,7 @@ export default function HeroBooking() {
 
   const estimatedPrice =
     pickupPlace && dropoffPlace
-      ? calculatePrice(routeInfo?.distanceKm || 0, pickup, dropoff) + (babySeat ? 10 : 0)
+      ? calculatePrice(routeInfo?.distanceKm || 0, pickup, dropoff, passengers) + (babySeat ? 10 : 0)
       : null;
 
   const canStep1 =
@@ -364,6 +364,19 @@ export default function HeroBooking() {
                     {routeInfo?.distanceText && <p><span className="text-slate-550">Distance:</span> {routeInfo.distanceText}</p>}
                     {routeInfo?.durationText && <p><span className="text-slate-550">Est. Duration:</span> {routeInfo.durationText}</p>}
                     {babySeat && <p className="col-span-2 text-emerald-450 font-bold">👶 Baby Car Seat Requested (+10 €)</p>}
+                  </div>
+
+                  <div className="mt-3.5 border-t border-slate-800/40 pt-3 space-y-1">
+                    <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Recommended Transfer Option</p>
+                    {passengers >= 5 && passengers <= 8 ? (
+                      <p className="text-emerald-450 font-bold text-xs">
+                        🚐 1 Mercedes-Benz Vito (Minivan) OR 🚗🚗 2 Electric Taxis
+                      </p>
+                    ) : (
+                      <p className="text-slate-200 font-bold text-xs">
+                        🚗 Toyota bZ4X (Premium Electric Sedan)
+                      </p>
+                    )}
                   </div>
                 </div>
 
