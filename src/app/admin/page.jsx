@@ -199,11 +199,7 @@ export default function AdminPage() {
     const totalPrice = Number(booking.price || 0);
     let driverShare = 0;
 
-    if (totalPrice >= 50) {
-      driverShare = Math.round(totalPrice * 0.88);
-    } else {
-      driverShare = Math.round(totalPrice * 0.75);
-    }
+    driverShare = Math.round(totalPrice * 0.85);
 
     const companyShare = totalPrice - driverShare;
 
