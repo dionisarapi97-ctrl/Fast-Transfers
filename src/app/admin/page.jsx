@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { supabase } from "@/lib/supabaseClient";
 
 const ADMIN_WHATSAPP = "355693048000";
@@ -40,8 +40,13 @@ export default function AdminPage() {
     }
   };
 
-  async function fetchData() {
-    setLoading(true);
+  const selectedBookingRef = useRef(selectedBooking);
+  useEffect(() => {
+    selectedBookingRef.current = selectedBooking;
+  }, [selectedBooking]);
+
+  async function fetchData(isSilent = false) {
+    if (!isSilent) setLoading(true);
 
     const bookingsResult = await supabase
       .from("bookings")
@@ -62,26 +67,27 @@ export default function AdminPage() {
     setDrivers(driversResult.data || []);
     
     // Keep selected booking reference updated if it exists
-    if (selectedBooking) {
-      const updatedSelected = loadedBookings.find(b => b.id === selectedBooking.id);
+    const currentSelected = selectedBookingRef.current;
+    if (currentSelected) {
+      const updatedSelected = loadedBookings.find(b => b.id === currentSelected.id);
       if (updatedSelected) {
         setSelectedBooking(updatedSelected);
         setAdminNotes(updatedSelected.admin_notes || "");
       }
     }
 
-    setLoading(false);
+    if (!isSilent) setLoading(false);
   }
 
   useEffect(() => {
-    fetchData();
+    fetchData(false);
 
     const intervalId = setInterval(() => {
-      fetchData();
+      fetchData(true);
     }, 120000);
 
     return () => clearInterval(intervalId);
-  }, [selectedBooking]);
+  }, []);
 
   const filteredBookings = useMemo(() => {
     return bookings.filter((booking) => {
