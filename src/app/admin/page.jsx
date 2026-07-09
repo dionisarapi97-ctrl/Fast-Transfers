@@ -167,6 +167,33 @@ export default function AdminPage() {
       return;
     }
 
+    const booking = bookings.find(b => b.id === id);
+
+    if (values.status && booking && booking.customer_email) {
+      try {
+        fetch("/api/send-email", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            to: booking.customer_email,
+            bookingId: booking.booking_id,
+            customerName: booking.customer_name,
+            pickup: booking.pickup,
+            dropoff: booking.dropoff,
+            date: booking.travel_date,
+            time: booking.travel_time,
+            price: booking.price,
+            status: values.status,
+            type: "status_update",
+          }),
+        });
+      } catch (e) {
+        console.error("Failed to trigger status update email:", e);
+      }
+    }
+
     // Update local states directly for responsiveness
     setBookings(prev => prev.map(b => b.id === id ? { ...b, ...values } : b));
     if (selectedBooking && selectedBooking.id === id) {
@@ -570,12 +597,22 @@ export default function AdminPage() {
                   <h3 className="text-xl font-black mt-1 text-slate-900 leading-tight">
                     {selectedBooking.customer_name || "Guest Client"}
                   </h3>
-                  <a
-                    href={`tel:${selectedBooking.customer_phone}`}
-                    className="text-xs text-emerald-600 hover:underline font-semibold mt-1 inline-block"
-                  >
-                    📞 {selectedBooking.customer_phone || "No phone"}
-                  </a>
+                  <div className="flex flex-col gap-1 mt-1">
+                    <a
+                      href={`tel:${selectedBooking.customer_phone}`}
+                      className="text-xs text-emerald-600 hover:underline font-semibold"
+                    >
+                      📞 {selectedBooking.customer_phone || "No phone"}
+                    </a>
+                    {selectedBooking.customer_email && (
+                      <a
+                        href={`mailto:${selectedBooking.customer_email}`}
+                        className="text-xs text-slate-500 hover:underline font-medium"
+                      >
+                        ✉️ {selectedBooking.customer_email}
+                      </a>
+                    )}
+                  </div>
                 </div>
 
                 <button

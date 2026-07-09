@@ -28,6 +28,7 @@ export default function HeroBooking() {
   const [dropoffDetails, setDropoffDetails] = useState("");
   const [flightNumber, setFlightNumber] = useState("");
   const [hotelName, setHotelName] = useState("");
+  const [customerEmail, setCustomerEmail] = useState("");
   const [babySeat, setBabySeat] = useState(false);
 
   const [date, setDate] = useState("");
@@ -90,6 +91,7 @@ export default function HeroBooking() {
   const canStep1 =
     customerName &&
     phoneNumber &&
+    customerEmail &&
     pickupPlace &&
     dropoffPlace &&
     (!isAirportBooking || flightNumber);
@@ -151,6 +153,7 @@ export default function HeroBooking() {
         booking_id: bookingId,
         customer_name: customerName,
         customer_phone: customerPhone,
+        customer_email: customerEmail,
         pickup,
         dropoff,
         pickup_details: babySeat ? `${pickupDetails} (Need Baby Car Seat)`.trim() : pickupDetails,
@@ -174,6 +177,29 @@ export default function HeroBooking() {
     if (error) {
       alert(error.message);
       return;
+    }
+
+    // Call API to send confirmation email
+    try {
+      fetch("/api/send-email", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          to: customerEmail,
+          bookingId: bookingId,
+          customerName: customerName,
+          pickup: pickup,
+          dropoff: dropoff,
+          date: date,
+          time: time,
+          price: estimatedPrice,
+          type: "creation",
+        }),
+      });
+    } catch (e) {
+      console.error("Failed to trigger confirmation email:", e);
     }
 
     router.push(`/booking/success?id=${bookingId}`);
@@ -279,6 +305,10 @@ export default function HeroBooking() {
                   </div>
                 </div>
 
+                <div>
+                  <Input label="Email Address" value={customerEmail} onChange={setCustomerEmail} placeholder="e.g. yourname@example.com" type="email" />
+                </div>
+
                 <div className="grid gap-4 md:grid-cols-2">
                   <GooglePlacesInput
                     label="Pickup Location"
@@ -353,6 +383,7 @@ export default function HeroBooking() {
                   <div className="grid grid-cols-2 gap-2">
                     <p><span className="text-slate-550">Passenger:</span> {customerName}</p>
                     <p><span className="text-slate-550">Phone:</span> {customerPhone}</p>
+                    <p className="col-span-2"><span className="text-slate-550">Email:</span> {customerEmail}</p>
                     <p className="col-span-2"><span className="text-slate-550 font-medium">From:</span> {pickup}</p>
                     <p className="col-span-2"><span className="text-slate-550 font-medium">To:</span> {dropoff}</p>
                     <p><span className="text-slate-550">Date:</span> {date}</p>
