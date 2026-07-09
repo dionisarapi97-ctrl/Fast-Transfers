@@ -28,7 +28,6 @@ export default function HeroBooking() {
   const [dropoffDetails, setDropoffDetails] = useState("");
   const [flightNumber, setFlightNumber] = useState("");
   const [hotelName, setHotelName] = useState("");
-  const [customerEmail, setCustomerEmail] = useState("");
   const [babySeat, setBabySeat] = useState(false);
 
   const [date, setDate] = useState("");
@@ -91,7 +90,6 @@ export default function HeroBooking() {
   const canStep1 =
     customerName &&
     phoneNumber &&
-    customerEmail &&
     pickupPlace &&
     dropoffPlace &&
     (!isAirportBooking || flightNumber);
@@ -153,7 +151,6 @@ export default function HeroBooking() {
         booking_id: bookingId,
         customer_name: customerName,
         customer_phone: customerPhone,
-        customer_email: customerEmail,
         pickup,
         dropoff,
         pickup_details: babySeat ? `${pickupDetails} (Need Baby Car Seat)`.trim() : pickupDetails,
@@ -179,29 +176,6 @@ export default function HeroBooking() {
       return;
     }
 
-    // Call API to send confirmation email
-    try {
-      fetch("/api/send-email", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          to: customerEmail,
-          bookingId: bookingId,
-          customerName: customerName,
-          pickup: pickup,
-          dropoff: dropoff,
-          date: date,
-          time: time,
-          price: estimatedPrice,
-          type: "creation",
-        }),
-      });
-    } catch (e) {
-      console.error("Failed to trigger confirmation email:", e);
-    }
-
     router.push(`/booking/success?id=${bookingId}`);
   };
 
@@ -215,14 +189,14 @@ export default function HeroBooking() {
       />
       {/* Sleek Dark Gradient Overlay with Premium Deep Obsidian Tint */}
       <div className="absolute inset-0 bg-gradient-to-tr from-[#0b0f19]/96 via-[#0d1527]/90 to-[#101b35]/70" />
-      
+
       {/* Ambient background glows */}
       <div className="absolute top-1/4 left-1/4 w-[350px] h-[350px] rounded-full bg-emerald-500/22 blur-[130px] pointer-events-none" />
       <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] rounded-full bg-blue-500/18 blur-[155px] pointer-events-none" />
       <div className="absolute top-[20%] right-[-10%] w-[350px] h-[350px] rounded-full bg-teal-450/15 blur-[120px] pointer-events-none" />
 
       <div className="relative z-10 w-full max-w-[1600px] mx-auto px-6 md:px-12 grid gap-12 lg:grid-cols-12 items-center">
-        
+
         {/* Left Column: Text Content */}
         <div className="lg:col-span-6 text-slate-300 space-y-8">
           <div className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-4.5 py-2 text-xs font-semibold uppercase tracking-widest text-emerald-400 shadow-sm">
@@ -245,15 +219,15 @@ export default function HeroBooking() {
 
           <div className="pt-6 grid grid-cols-2 sm:grid-cols-3 gap-6 text-sm font-medium text-slate-300">
             <div className="flex items-center gap-2.5">
-              <div className="flex items-center justify-center w-6 h-6 rounded-full bg-emerald-500/10 text-emerald-400">✓</div> 
+              <div className="flex items-center justify-center w-6 h-6 rounded-full bg-emerald-500/10 text-emerald-400">✓</div>
               Fixed Rates
             </div>
             <div className="flex items-center gap-2.5">
-              <div className="flex items-center justify-center w-6 h-6 rounded-full bg-emerald-500/10 text-[#10b981]">✓</div> 
+              <div className="flex items-center justify-center w-6 h-6 rounded-full bg-emerald-500/10 text-[#10b981]">✓</div>
               24/7 Support
             </div>
             <div className="flex items-center gap-2.5">
-              <div className="flex items-center justify-center w-6 h-6 rounded-full bg-emerald-500/10 text-emerald-400">✓</div> 
+              <div className="flex items-center justify-center w-6 h-6 rounded-full bg-emerald-500/10 text-emerald-400">✓</div>
               Licensed Drivers
             </div>
           </div>
@@ -262,7 +236,7 @@ export default function HeroBooking() {
         {/* Right Column: Interactive Booking Form */}
         <div className="lg:col-span-6 w-full flex lg:justify-end" id="booking-card">
           <div className="w-full max-w-[520px] rounded-[32px] border border-slate-800/35 bg-slate-950/15 p-6 md:p-8 text-slate-300 shadow-[0_20px_50px_rgba(0,0,0,0.45)] backdrop-blur-xl transition-all duration-300 hover:border-emerald-500/20">
-            
+
             {/* Form Header */}
             <div className="mb-6 flex items-center justify-between border-b border-slate-850/40 pb-4">
               <div>
@@ -305,9 +279,6 @@ export default function HeroBooking() {
                   </div>
                 </div>
 
-                <div>
-                  <Input label="Email Address" value={customerEmail} onChange={setCustomerEmail} placeholder="e.g. yourname@example.com" type="email" />
-                </div>
 
                 <div className="grid gap-4 md:grid-cols-2">
                   <GooglePlacesInput
@@ -383,7 +354,6 @@ export default function HeroBooking() {
                   <div className="grid grid-cols-2 gap-2">
                     <p><span className="text-slate-550">Passenger:</span> {customerName}</p>
                     <p><span className="text-slate-550">Phone:</span> {customerPhone}</p>
-                    <p className="col-span-2"><span className="text-slate-550">Email:</span> {customerEmail}</p>
                     <p className="col-span-2"><span className="text-slate-550 font-medium">From:</span> {pickup}</p>
                     <p className="col-span-2"><span className="text-slate-550 font-medium">To:</span> {dropoff}</p>
                     <p><span className="text-slate-550">Date:</span> {date}</p>
@@ -453,7 +423,7 @@ export default function HeroBooking() {
                   </button>
                 )}
               </div>
-              
+
               {step === 3 && (
                 <p className="text-[9px] text-slate-500 text-center leading-relaxed">
                   ⚠️ Rezervimi mund të anullohet pa pagesë vetëm deri në 24 orë para kohës së nisjes.<br />

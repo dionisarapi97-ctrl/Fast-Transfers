@@ -15,7 +15,7 @@ export default function AdminPage() {
   const [customDate, setCustomDate] = useState("");
   const [loading, setLoading] = useState(true);
   const [selectedBooking, setSelectedBooking] = useState(null);
-  
+
   // Note state
   const [adminNotes, setAdminNotes] = useState("");
   const [isSavingNotes, setIsSavingNotes] = useState(false);
@@ -65,7 +65,7 @@ export default function AdminPage() {
     const loadedBookings = bookingsResult.data || [];
     setBookings(loadedBookings);
     setDrivers(driversResult.data || []);
-    
+
     // Keep selected booking reference updated if it exists
     const currentSelected = selectedBookingRef.current;
     if (currentSelected) {
@@ -167,32 +167,7 @@ export default function AdminPage() {
       return;
     }
 
-    const booking = bookings.find(b => b.id === id);
 
-    if (values.status && booking && booking.customer_email) {
-      try {
-        fetch("/api/send-email", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            to: booking.customer_email,
-            bookingId: booking.booking_id,
-            customerName: booking.customer_name,
-            pickup: booking.pickup,
-            dropoff: booking.dropoff,
-            date: booking.travel_date,
-            time: booking.travel_time,
-            price: booking.price,
-            status: values.status,
-            type: "status_update",
-          }),
-        });
-      } catch (e) {
-        console.error("Failed to trigger status update email:", e);
-      }
-    }
 
     // Update local states directly for responsiveness
     setBookings(prev => prev.map(b => b.id === id ? { ...b, ...values } : b));
@@ -264,7 +239,7 @@ export default function AdminPage() {
     if (selectedBooking && selectedBooking.id === id) {
       setSelectedBooking(null);
     }
-    
+
     setBookings(prev => prev.filter(b => b.id !== id));
   }
 
@@ -391,7 +366,7 @@ export default function AdminPage() {
 
   return (
     <main className="min-h-screen bg-slate-50 px-6 py-10 text-slate-800 md:px-12 relative">
-      
+
       {/* Top Header Section */}
       <div className="relative z-10 mb-10 flex flex-col justify-between gap-6 md:flex-row md:items-center border-b border-slate-200 pb-6">
         <div>
@@ -431,10 +406,10 @@ export default function AdminPage() {
 
       {/* Main Layout: Master-Detail Grid */}
       <div className="relative z-10 grid gap-6 lg:grid-cols-12 items-start">
-        
+
         {/* LEFT COLUMN: Master Booking List */}
         <div className="lg:col-span-7 space-y-6">
-          
+
           {/* Search & Filters */}
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-4">
             <div className="relative">
@@ -524,11 +499,10 @@ export default function AdminPage() {
                 <div
                   key={booking.id}
                   onClick={() => handleSelectBooking(booking)}
-                  className={`rounded-2xl border p-5 transition-all duration-200 cursor-pointer flex flex-col justify-between gap-4 ${
-                    isSelected
-                      ? "border-emerald-600 bg-emerald-50/40 shadow-sm"
-                      : "border-slate-200 bg-white hover:bg-slate-50/50 hover:border-slate-300"
-                  }`}
+                  className={`rounded-2xl border p-5 transition-all duration-200 cursor-pointer flex flex-col justify-between gap-4 ${isSelected
+                    ? "border-emerald-600 bg-emerald-50/40 shadow-sm"
+                    : "border-slate-200 bg-white hover:bg-slate-50/50 hover:border-slate-300"
+                    }`}
                 >
                   <div className="flex justify-between items-start">
                     <div>
@@ -579,10 +553,10 @@ export default function AdminPage() {
 
         {/* RIGHT COLUMN: Detail Pane */}
         <div className="lg:col-span-5 relative lg:sticky lg:top-24">
-          
+
           {selectedBooking ? (
             <div className="rounded-[28px] border border-slate-200 bg-white p-6 text-slate-800 shadow-xl space-y-6 animate-fade-in">
-              
+
               {/* Card Header & Client Title */}
               <div className="border-b border-slate-100 pb-4 flex justify-between items-start">
                 <div>
@@ -598,20 +572,14 @@ export default function AdminPage() {
                     {selectedBooking.customer_name || "Guest Client"}
                   </h3>
                   <div className="flex flex-col gap-1 mt-1">
-                    <a
-                      href={`tel:${selectedBooking.customer_phone}`}
-                      className="text-xs text-emerald-600 hover:underline font-semibold"
-                    >
-                      📞 {selectedBooking.customer_phone || "No phone"}
-                    </a>
-                    {selectedBooking.customer_email && (
-                      <a
-                        href={`mailto:${selectedBooking.customer_email}`}
-                        className="text-xs text-slate-500 hover:underline font-medium"
-                      >
-                        ✉️ {selectedBooking.customer_email}
-                      </a>
-                    )}
+
+                    href={`tel:${selectedBooking.customer_phone}`}
+                    className="text-xs text-emerald-600 hover:underline font-semibold"
+
+                    📞 {selectedBooking.customer_phone || "No phone"}
+
+
+
                   </div>
                 </div>
 
@@ -644,7 +612,7 @@ export default function AdminPage() {
                     <p className="text-[10px] text-slate-500 italic pl-4 mt-1">Details: {selectedBooking.pickup_details}</p>
                   )}
                 </div>
-                
+
                 <hr className="border-slate-200" />
 
                 <div>
@@ -795,9 +763,8 @@ export default function AdminPage() {
 
 function Stat({ title, value, icon, desc, highlight = false }) {
   return (
-    <div className={`rounded-2xl border bg-white p-5 hover:shadow-md transition duration-300 ${
-      highlight ? 'border-emerald-500/40 shadow-[0_0_20px_rgba(16,185,129,0.05)] bg-emerald-50/10' : 'border-slate-200/80 shadow-sm'
-    }`}>
+    <div className={`rounded-2xl border bg-white p-5 hover:shadow-md transition duration-300 ${highlight ? 'border-emerald-500/40 shadow-[0_0_20px_rgba(16,185,129,0.05)] bg-emerald-50/10' : 'border-slate-200/80 shadow-sm'
+      }`}>
       <div className="flex justify-between items-start">
         <div className="space-y-1">
           <p className="text-[11px] text-slate-400 uppercase tracking-wider font-semibold">{title}</p>
