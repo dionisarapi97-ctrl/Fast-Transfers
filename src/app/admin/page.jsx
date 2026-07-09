@@ -20,6 +20,26 @@ export default function AdminPage() {
   const [adminNotes, setAdminNotes] = useState("");
   const [isSavingNotes, setIsSavingNotes] = useState(false);
 
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [passwordInput, setPasswordInput] = useState("");
+
+  useEffect(() => {
+    const saved = sessionStorage.getItem("admin_auth");
+    if (saved === "true") {
+      setIsAuthenticated(true);
+    }
+  }, []);
+
+  const handleLogin = (e) => {
+    e.preventDefault();
+    if (passwordInput === "FastAdmin2026!") {
+      setIsAuthenticated(true);
+      sessionStorage.setItem("admin_auth", "true");
+    } else {
+      alert("Fjalëkalim i gabuar!");
+    }
+  };
+
   async function fetchData() {
     setLoading(true);
 
@@ -298,6 +318,40 @@ export default function AdminPage() {
 ⚙️ *Status:* ${booking.status || "Pending"}
 📝 *Admin Notes:* ${booking.admin_notes || "None"}
 ----------------------------------------`;
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <main className="min-h-screen bg-slate-50 flex items-center justify-center p-6 text-slate-800">
+        <div className="w-full max-w-md bg-white rounded-3xl border border-slate-200 shadow-xl p-8 space-y-6">
+          <div className="text-center space-y-2">
+            <span className="text-4xl">🚖</span>
+            <h2 className="text-2xl font-black text-slate-900">Fast Transfers</h2>
+            <p className="text-xs text-slate-450 uppercase tracking-widest font-bold">Admin Panel Access</p>
+          </div>
+
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Fjalëkalimi (Admin Password)</label>
+              <input
+                type="password"
+                value={passwordInput}
+                onChange={(e) => setPasswordInput(e.target.value)}
+                placeholder="Shkruaj fjalëkalimin..."
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 outline-none focus:bg-white focus:border-emerald-500/40 transition"
+              />
+            </div>
+
+            <button
+              type="submit"
+              className="w-full rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold py-3 text-xs tracking-wider uppercase transition duration-300 shadow-sm cursor-pointer"
+            >
+              Hyni në Panel (Login)
+            </button>
+          </form>
+        </div>
+      </main>
+    );
   }
 
   return (
