@@ -73,7 +73,7 @@ export default function Footer() {
             Rinas, Albania
           </p>
           <p className="text-slate-400">
-            Email: <a href="mailto:info@fast-transfers.al" className="hover:underline text-slate-350">info@fast-transfers.al</a>
+            Email: <a href="mailto:fasttransfers.booking@gmail.com" className="hover:underline text-slate-350">fasttransfers.booking@gmail.com</a>
           </p>
         </div>
 

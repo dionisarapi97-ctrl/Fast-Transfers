@@ -7,7 +7,7 @@ export async function POST(req) {
     const { to, bookingId, customerName, pickup, dropoff, date, time, price, status, type } = body;
 
     // Check if SMTP environment variables are set. If not, bypass to avoid breaking the UI.
-    const host = process.env.SMTP_HOST || "smtp.hostinger.com";
+    const host = process.env.SMTP_HOST || "smtp.gmail.com";
     const port = parseInt(process.env.SMTP_PORT || "465");
     const user = process.env.SMTP_USER;
     const pass = process.env.SMTP_PASS;
@@ -71,7 +71,7 @@ export async function POST(req) {
             <p style="margin-bottom: 0;">Do të lajmëroheni me një email tjetër sapo transferta juaj të konfirmohet dhe shoferi të caktohet.</p>
           </div>
           <div style="background-color: #f8fafc; padding: 16px; text-align: center; font-size: 11px; color: #94a3b8; border-top: 1px solid #f1f5f9;">
-            Fast Transfers &copy; 2026 · Support: info@fasttransfers.net
+            Fast Transfers &copy; 2026 · Support: fasttransfers.booking@gmail.com
           </div>
         </div>
       `;
@@ -116,7 +116,7 @@ export async function POST(req) {
               <p>Detajet e shoferit do t'ju dërgohen gjithashtu në WhatsApp përpara nisjes. Faleminderit që zgjodhët shërbimin tonë!</p>
             </div>
             <div style="background-color: #f8fafc; padding: 16px; text-align: center; font-size: 11px; color: #94a3b8; border-top: 1px solid #f1f5f9;">
-              Fast Transfers &copy; 2026 · Support: info@fasttransfers.net
+              Fast Transfers &copy; 2026 · Support: fasttransfers.booking@gmail.com
             </div>
           </div>
         `;
@@ -156,7 +156,7 @@ export async function POST(req) {
               <p>Nëse ky anullim u bë gabimisht ose dëshironi të bëni një rezervim të ri, ju lutemi kryeni një aplikim të ri në faqen tonë ose na shkruani në WhatsApp.</p>
             </div>
             <div style="background-color: #f8fafc; padding: 16px; text-align: center; font-size: 11px; color: #94a3b8; border-top: 1px solid #f1f5f9;">
-              Fast Transfers &copy; 2026 · Support: info@fasttransfers.net
+              Fast Transfers &copy; 2026 · Support: fasttransfers.booking@gmail.com
             </div>
           </div>
         `;
