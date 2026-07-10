@@ -144,7 +144,19 @@ export const translations = {
     no_upcoming_trips: "Nuk keni asnjë udhëtim të planifikuar.",
     no_past_trips: "Asnjë udhëtim i shkuar.",
     assigned_driver: "Shoferi i caktuar",
-    loading_profile: "Duke ngarkuar profilin..."
+    loading_profile: "Duke ngarkuar profilin...",
+
+    // Reviews & Feedback
+    leave_review: "Jep Vlerësim",
+    reviewed: "U vlerësua",
+    review_title: "Vlerëso Udhëtimin Tënd",
+    rate_service: "Vlerëso shërbimin tonë (faqen):",
+    rate_driver: "Vlerëso shoferin ({name}):",
+    review_placeholder: "Shkruani komente ose sugjerime këtu...",
+    submit_review: "Dërgo Vlerësimin",
+    submitting: "Duke u dërguar...",
+    review_success: "Vlerësimi u dërgua me sukses! Ju faleminderit.",
+    review_error: "Ndodhi një gabim gjatë dërgimit. Provoni përsëri."
   },
   en: {
     destinations: "Destinations",
@@ -274,7 +286,19 @@ export const translations = {
     no_upcoming_trips: "You have no scheduled trips.",
     no_past_trips: "No past trips.",
     assigned_driver: "Assigned Driver",
-    loading_profile: "Loading profile..."
+    loading_profile: "Loading profile...",
+
+    // Reviews & Feedback
+    leave_review: "Leave Review",
+    reviewed: "Reviewed",
+    review_title: "Rate Your Transfer",
+    rate_service: "Rate our service (website):",
+    rate_driver: "Rate the driver ({name}):",
+    review_placeholder: "Write comments or suggestions here...",
+    submit_review: "Submit Review",
+    submitting: "Submitting...",
+    review_success: "Review submitted successfully! Thank you.",
+    review_error: "An error occurred while submitting. Try again."
   },
   it: {
     destinations: "Destinazioni",
@@ -404,7 +428,19 @@ export const translations = {
     no_upcoming_trips: "Non hai viaggi pianificati.",
     no_past_trips: "Nessun viaggio passato.",
     assigned_driver: "Autista Assegnato",
-    loading_profile: "Caricamento profilo..."
+    loading_profile: "Caricamento profilo...",
+
+    // Reviews & Feedback
+    leave_review: "Lascia Recensione",
+    reviewed: "Recensito",
+    review_title: "Valuta il tuo Viaggio",
+    rate_service: "Valuta il nostro servizio (sito):",
+    rate_driver: "Valuta l'autista ({name}):",
+    review_placeholder: "Scrivi commenti o suggerimenti qui...",
+    submit_review: "Invia Recensione",
+    submitting: "Invio...",
+    review_success: "Recensione inviata con successo! Grazie.",
+    review_error: "Errore durante l'invio. Riprova."
   },
   de: {
     destinations: "Reiseziele",
@@ -534,7 +570,19 @@ export const translations = {
     no_upcoming_trips: "Sie haben keine geplanten Fahrten.",
     no_past_trips: "Keine vergangenen Fahrten.",
     assigned_driver: "Zugewiesener Fahrer",
-    loading_profile: "Profil wird geladen..."
+    loading_profile: "Profil wird geladen...",
+
+    // Reviews & Feedback
+    leave_review: "Fahrt bewerten",
+    reviewed: "Bewertet",
+    review_title: "Fahrt bewerten",
+    rate_service: "Bewerten Sie unseren Service (Website):",
+    rate_driver: "Bewerten Sie den Fahrer ({name}):",
+    review_placeholder: "Schreiben Sie Kommentare oder Vorschläge...",
+    submit_review: "Absenden",
+    submitting: "Wird gesendet...",
+    review_success: "Bewertung erfolgreich übermittelt! Vielen Dank.",
+    review_error: "Fehler beim Absenden. Versuchen Sie es erneut."
   },
   fr: {
     destinations: "Destinations",
@@ -605,7 +653,7 @@ export const translations = {
     why_feat2_title: "Tarifs Fixes & Transparents",
     why_feat2_desc: "Aucun frais caché. Le prix calculé est exactement ce que vous paierez.",
     why_feat3_title: "Disponibilité 24/7",
-    why_feat3_desc: "We are available 24 hours a day, 7 days a week, regardless of your flight arrival time.",
+    why_feat3_desc: "Nous sommes disponibles 24 heures sur 24, 7 jours sur 7, quelle que soit l'heure du vol.",
     why_feat4_title: "Suivi de Vol en Direct",
     why_feat4_desc: "Nous suivons votre vol en temps réel. En cas de retard, nous vous attendons gratuitement.",
     why_feat5_title: "Chauffeurs Professionnels",
@@ -664,7 +712,19 @@ export const translations = {
     no_upcoming_trips: "Vous n'avez aucun voyage prévu.",
     no_past_trips: "Aucun voyage passé.",
     assigned_driver: "Chauffeur Assigné",
-    loading_profile: "Chargement du profil..."
+    loading_profile: "Chargement du profil...",
+
+    // Reviews & Feedback
+    leave_review: "Évaluer le voyage",
+    reviewed: "Évalué",
+    review_title: "Évaluer votre voyage",
+    rate_service: "Évaluer notre service (site) :",
+    rate_driver: "Évaluer le chauffeur ({name}) :",
+    review_placeholder: "Écrire des commentaires ou des suggestions...",
+    submit_review: "Envoyer",
+    submitting: "Envoi en cours...",
+    review_success: "Avis envoyé avec succès ! Merci.",
+    review_error: "Une erreur est survenue lors de l'envoi. Réessayez."
   },
   es: {
     destinations: "Destinos",
@@ -794,6 +854,18 @@ export const translations = {
     no_upcoming_trips: "No tiene viajes programados.",
     no_past_trips: "Sin viajes anteriores.",
     assigned_driver: "Conductor Asignado",
-    loading_profile: "Cargando perfil..."
+    loading_profile: "Cargando perfil...",
+
+    // Reviews & Feedback
+    leave_review: "Dejar reseña",
+    reviewed: "Reseñado",
+    review_title: "Valorar su viaje",
+    rate_service: "Valore nuestro servicio (sitio web):",
+    rate_driver: "Valore al conductor ({name}):",
+    review_placeholder: "Escriba comentarios o sugerencias...",
+    submit_review: "Enviar",
+    submitting: "Enviando...",
+    review_success: "¡Reseña enviada con éxito! Gracias.",
+    review_error: "Ocurrió un error al enviar. Intente de nuevo."
   }
 };

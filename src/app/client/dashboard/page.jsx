@@ -23,6 +23,14 @@ export default function ClientDashboard() {
   const [langOpen, setLangOpen] = useState(false);
   const dropdownRef = useRef(null);
 
+  // Review states
+  const [isReviewOpen, setIsReviewOpen] = useState(false);
+  const [selectedBookingToReview, setSelectedBookingToReview] = useState(null);
+  const [ratingWebsite, setRatingWebsite] = useState(5);
+  const [ratingDriver, setRatingDriver] = useState(5);
+  const [reviewComment, setReviewComment] = useState("");
+  const [submittingReview, setSubmittingReview] = useState(false);
+
   useEffect(() => {
     async function loadClientData() {
       setLoading(true);
@@ -71,6 +79,47 @@ export default function ClientDashboard() {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     router.push("/login");
+  };
+
+  const openReviewModal = (booking) => {
+    setSelectedBookingToReview(booking);
+    setRatingWebsite(5);
+    setRatingDriver(5);
+    setReviewComment("");
+    setIsReviewOpen(true);
+  };
+
+  const submitReview = async () => {
+    if (!selectedBookingToReview) return;
+    setSubmittingReview(true);
+
+    const updateData = {
+      rating_website: ratingWebsite,
+      review_comment: reviewComment,
+    };
+
+    if (selectedBookingToReview.driver_name) {
+      updateData.rating_driver = ratingDriver;
+    }
+
+    const { error } = await supabase
+      .from("bookings")
+      .update(updateData)
+      .eq("id", selectedBookingToReview.id);
+
+    setSubmittingReview(false);
+
+    if (error) {
+      alert(t("review_error") + ": " + error.message);
+      return;
+    }
+
+    alert(t("review_success"));
+    
+    // Update local state directly so the yjet show up without reloading!
+    setBookings(prev => prev.map(b => b.id === selectedBookingToReview.id ? { ...b, ...updateData } : b));
+    setIsReviewOpen(false);
+    setSelectedBookingToReview(null);
   };
 
   if (loading) {
@@ -122,7 +171,7 @@ export default function ClientDashboard() {
                   setLangOpen(false);
                 }}
                 className={`w-full flex items-center gap-2.5 rounded-xl px-3 py-2 text-left text-xs font-bold transition hover:bg-white/10 cursor-pointer ${
-                  language === l.code ? "text-[#00D084] bg-white/5" : "text-slate-355"
+                  language === l.code ? "text-[#00D084] bg-white/5" : "text-slate-350"
                 }`}
               >
                 <span className="text-sm">{l.flag}</span>
@@ -138,7 +187,7 @@ export default function ClientDashboard() {
         <div className="space-y-2">
           <div className="flex items-center gap-3">
             <span className="text-xs font-bold uppercase tracking-[0.2em] text-[#00D084]">{t("client_dashboard_title")}</span>
-            <span className="text-[10px] text-emerald-450 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 rounded-full font-bold">
+            <span className="text-[10px] text-emerald-455 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 rounded-full font-bold">
               {t("loyal_client")}
             </span>
           </div>
@@ -179,7 +228,7 @@ export default function ClientDashboard() {
               <div key={b.id} className="rounded-3xl border border-white/10 bg-white/5 p-6 space-y-4 shadow-sm hover:border-[#00D084]/20 transition duration-300">
                 <div className="flex justify-between items-start gap-4">
                   <div>
-                    <span className="text-[10px] font-bold text-emerald-450 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-2 py-0.5">
+                    <span className="text-[10px] font-bold text-emerald-455 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-2 py-0.5">
                       {b.booking_id}
                     </span>
                     <div className="grid gap-1 mt-3 text-xs text-slate-350">
@@ -217,7 +266,7 @@ export default function ClientDashboard() {
                 </div>
 
                 {b.driver_name && (
-                  <div className="flex items-center gap-2 text-[11px] text-emerald-450 bg-emerald-500/5 border border-emerald-500/10 p-3 rounded-xl">
+                  <div className="flex items-center gap-2 text-[11px] text-emerald-455 bg-emerald-500/5 border border-emerald-500/10 p-3 rounded-xl">
                     <span>🚗</span>
                     <span>{t("assigned_driver")}: <strong>{b.driver_name}</strong></span>
                   </div>
@@ -257,7 +306,32 @@ export default function ClientDashboard() {
                 </div>
                 <p className="text-slate-355 truncate"><span className="text-white/30">{t("summary_from")}:</span> {b.pickup}</p>
                 <p className="text-slate-355 truncate"><span className="text-white/30">{t("summary_to")}:</span> {b.dropoff}</p>
-                <div className="flex justify-between items-center text-[10px] pt-2 border-t border-white/5 text-slate-450">
+                
+                {/* Driver name */}
+                {b.status === "Completed" && b.driver_name && (
+                  <p className="text-[10px] text-slate-400">🚗 {t("assigned_driver")}: <strong className="text-slate-300">{b.driver_name}</strong></p>
+                )}
+
+                {/* Ratings display or review button */}
+                {b.status === "Completed" && (
+                  <div className="pt-2 border-t border-white/5 flex items-center justify-between">
+                    {b.rating_website ? (
+                      <div className="text-[10px] text-emerald-450 font-bold flex flex-wrap gap-2.5">
+                        <span>🖥️ Service: {b.rating_website} ★</span>
+                        {b.rating_driver && <span>🚗 Driver: {b.rating_driver} ★</span>}
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => openReviewModal(b)}
+                        className="rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold px-3.5 py-2 text-[10px] tracking-wide uppercase transition cursor-pointer"
+                      >
+                        {t("leave_review")} 💬
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                <div className="flex justify-between items-center text-[10px] pt-2 border-t border-white/5 text-slate-455">
                   <span>📅 {b.travel_date} · {b.travel_time}</span>
                   <span className="font-bold text-[#00D084]">{b.price} €</span>
                 </div>
@@ -273,6 +347,95 @@ export default function ClientDashboard() {
         </div>
 
       </div>
+
+      {/* Review Modal Dialog Overlay */}
+      {isReviewOpen && selectedBookingToReview && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center p-4 z-50">
+          <div className="w-full max-w-md rounded-[32px] border border-white/10 bg-slate-950 p-6 md:p-8 space-y-6 shadow-2xl relative text-slate-200">
+            <button
+              onClick={() => setIsReviewOpen(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-white text-lg font-bold cursor-pointer"
+            >
+              ✕
+            </button>
+            
+            <div className="text-center space-y-2">
+              <span className="text-3xl">⭐</span>
+              <h3 className="text-xl font-black text-slate-100">{t("review_title")}</h3>
+              <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">
+                Booking ID: {selectedBookingToReview.booking_id}
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              
+              {/* Star Rating Website */}
+              <div className="space-y-2 text-center">
+                <label className="text-xs font-semibold text-slate-450 block">{t("rate_service")}</label>
+                <div className="flex gap-2 justify-center">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setRatingWebsite(star)}
+                      className={`text-2xl cursor-pointer transition ${
+                        star <= ratingWebsite ? "text-amber-400 scale-110" : "text-white/20 hover:text-white/40"
+                      }`}
+                    >
+                      ★
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Star Rating Driver (if driver is assigned) */}
+              {selectedBookingToReview.driver_name && (
+                <div className="space-y-2 border-t border-white/5 pt-3 text-center">
+                  <label className="text-xs font-semibold text-slate-450 block">
+                    {t("rate_driver", { name: selectedBookingToReview.driver_name })}
+                  </label>
+                  <div className="flex gap-2 justify-center">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        type="button"
+                        onClick={() => setRatingDriver(star)}
+                        className={`text-2xl cursor-pointer transition ${
+                          star <= ratingDriver ? "text-amber-400 scale-110" : "text-white/20 hover:text-white/40"
+                        }`}
+                      >
+                        ★
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Review Comments */}
+              <div className="space-y-1.5 border-t border-white/5 pt-3">
+                <label className="text-xs font-semibold text-slate-450 block">
+                  {language === "sq" ? "Komentet tuaja (opsionale):" : "Your comments (optional):"}
+                </label>
+                <textarea
+                  value={reviewComment}
+                  onChange={(e) => setReviewComment(e.target.value)}
+                  placeholder={t("review_placeholder")}
+                  rows="3"
+                  className="w-full rounded-2xl border border-white/15 bg-white/5 p-4 text-xs text-white outline-none focus:border-[#00D084] focus:bg-white/10 transition resize-none placeholder:text-white/20"
+                />
+              </div>
+
+              <button
+                onClick={submitReview}
+                disabled={submittingReview}
+                className="w-full rounded-full bg-[#00D084] hover:bg-[#00b06f] disabled:opacity-50 text-white font-extrabold py-3.5 text-xs tracking-wider uppercase transition-all duration-300 shadow-[0_0_20px_rgba(0,208,132,0.2)] hover:scale-[1.02] active:scale-[0.98] cursor-pointer mt-4"
+              >
+                {submittingReview ? t("submitting") : t("submit_review")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

@@ -558,6 +558,12 @@ export default function AdminPage() {
   const driverSummaries = useMemo(() => {
     const summaries = {};
     drivers.forEach(d => {
+      // Find all bookings for this driver to compute average rating
+      const driverBookingsWithRating = bookings.filter(b => b.driver_id === d.id && b.rating_driver);
+      const totalRatingsCount = driverBookingsWithRating.length;
+      const sumRatings = driverBookingsWithRating.reduce((sum, b) => sum + b.rating_driver, 0);
+      const avgRating = totalRatingsCount > 0 ? (sumRatings / totalRatingsCount).toFixed(1) : null;
+
       summaries[d.id] = {
         name: d.name,
         phone: d.phone || "-",
@@ -566,6 +572,7 @@ export default function AdminPage() {
         driverShare: 0,
         companyShare: 0,
         totalGross: 0,
+        avgRating: avgRating ? `${avgRating} ★ (${totalRatingsCount})` : "—",
       };
     });
 
@@ -581,6 +588,7 @@ export default function AdminPage() {
             driverShare: 0,
             companyShare: 0,
             totalGross: 0,
+            avgRating: "—",
           };
         }
         summaries[b.driver_id].bookingsCount += 1;
@@ -594,7 +602,7 @@ export default function AdminPage() {
       const text = `${ds.name} ${ds.phone} ${ds.email}`.toLowerCase();
       return text.includes(modalSearch.toLowerCase());
     });
-  }, [drivers, monthlyBookings, modalSearch]);
+  }, [drivers, monthlyBookings, bookings, modalSearch]);
 
   const driversShareRows = useMemo(() => {
     const list = driverSummaries.map(ds => [
@@ -602,6 +610,7 @@ export default function AdminPage() {
       ds.phone,
       ds.email,
       ds.bookingsCount,
+      ds.avgRating,
       `${ds.driverShare} €`,
       `${ds.companyShare} €`,
       `${ds.totalGross} €`
@@ -612,7 +621,7 @@ export default function AdminPage() {
     const totalCompanyShare = driverSummaries.reduce((sum, ds) => sum + ds.companyShare, 0);
     const totalGross = driverSummaries.reduce((sum, ds) => sum + ds.totalGross, 0);
 
-    list.push(["TOTALI", `${driverSummaries.length} shoferë`, "", totalBookings, `${totalDriverShare} €`, `${totalCompanyShare} €`, `${totalGross} €`]);
+    list.push(["TOTALI", `${driverSummaries.length} shoferë`, "", totalBookings, "", `${totalDriverShare} €`, `${totalCompanyShare} €`, `${totalGross} €`]);
     return list;
   }, [driverSummaries]);
 
@@ -1106,6 +1115,33 @@ export default function AdminPage() {
                   </div>
                 </div>
               </div>
+              
+              {/* Section: Client Review & Feedback (if present) */}
+              {(selectedBooking.rating_website || selectedBooking.review_comment) && (
+                <div className="space-y-2 bg-amber-500/5 border border-amber-500/20 p-4 rounded-xl text-xs">
+                  <span className="block text-[10px] font-bold text-amber-700 uppercase tracking-wider">Client Review & Feedback</span>
+                  <div className="flex gap-4 mt-2">
+                    <div>
+                      <span className="text-slate-400 block text-[9px] uppercase">Service Rating</span>
+                      <span className="font-bold text-amber-600">{selectedBooking.rating_website ? `${selectedBooking.rating_website} / 5 ★` : "—"}</span>
+                    </div>
+                    {selectedBooking.rating_driver && (
+                      <div>
+                        <span className="text-slate-400 block text-[9px] uppercase">Driver Rating</span>
+                        <span className="font-bold text-amber-600">{selectedBooking.rating_driver} / 5 ★</span>
+                      </div>
+                    )}
+                  </div>
+                  {selectedBooking.review_comment && (
+                    <div className="mt-3 pt-2 border-t border-amber-500/10">
+                      <span className="text-slate-400 block text-[9px] uppercase">Client Comment</span>
+                      <p className="text-slate-700 font-medium italic mt-1 bg-white/50 p-2.5 rounded-lg">
+                        "{selectedBooking.review_comment}"
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Section 4: Custom Notes */}
               <div className="space-y-2">
@@ -1219,7 +1255,7 @@ export default function AdminPage() {
                 <button
                   onClick={() => {
                     if (activeModal === "revenue") exportToPDF(`Raporti i Gross Revenue`, ["Data", "Booking ID", "Klienti", "Shoferi", "Rruga", "Statusi", "Pagesa"], revenueRows);
-                    if (activeModal === "drivers") exportToPDF(`Raporti i Drivers Share`, ["Shoferi", "Telefon", "Email", "Total Bookings", "Driver Share", "Company Share", "Total Gross"], driversShareRows);
+                    if (activeModal === "drivers") exportToPDF(`Raporti i Drivers Share`, ["Shoferi", "Telefon", "Email", "Total Bookings", "Vlerësimi", "Driver Share", "Company Share", "Total Gross"], driversShareRows);
                     if (activeModal === "platform") exportToPDF(`Raporti i Platform Earnings`, ["Data", "Booking ID", "Klienti", "Shoferi", "Total Fare", "Driver Share", "Platform Share", "Statusi"], platformEarningsRows);
                   }}
                   className="rounded-xl border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 font-bold px-4 py-2 text-xs transition cursor-pointer flex items-center gap-1.5"
@@ -1229,7 +1265,7 @@ export default function AdminPage() {
                 <button
                   onClick={() => {
                     if (activeModal === "revenue") exportToWord(`Raporti i Gross Revenue`, ["Data", "Booking ID", "Klienti", "Shoferi", "Rruga", "Statusi", "Pagesa"], revenueRows);
-                    if (activeModal === "drivers") exportToWord(`Raporti i Drivers Share`, ["Shoferi", "Telefon", "Email", "Total Bookings", "Driver Share", "Company Share", "Total Gross"], driversShareRows);
+                    if (activeModal === "drivers") exportToWord(`Raporti i Drivers Share`, ["Shoferi", "Telefon", "Email", "Total Bookings", "Vlerësimi", "Driver Share", "Company Share", "Total Gross"], driversShareRows);
                     if (activeModal === "platform") exportToWord(`Raporti i Platform Earnings`, ["Data", "Booking ID", "Klienti", "Shoferi", "Total Fare", "Driver Share", "Platform Share", "Statusi"], platformEarningsRows);
                   }}
                   className="rounded-xl border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 font-bold px-4 py-2 text-xs transition cursor-pointer flex items-center gap-1.5"
@@ -1239,7 +1275,7 @@ export default function AdminPage() {
                 <button
                   onClick={() => {
                     if (activeModal === "revenue") exportToCSV(`Raporti i Gross Revenue`, ["Data", "Booking ID", "Klienti", "Shoferi", "Rruga", "Statusi", "Pagesa"], revenueRows);
-                    if (activeModal === "drivers") exportToCSV(`Raporti i Drivers Share`, ["Shoferi", "Telefon", "Email", "Total Bookings", "Driver Share", "Company Share", "Total Gross"], driversShareRows);
+                    if (activeModal === "drivers") exportToCSV(`Raporti i Drivers Share`, ["Shoferi", "Telefon", "Email", "Total Bookings", "Vlerësimi", "Driver Share", "Company Share", "Total Gross"], driversShareRows);
                     if (activeModal === "platform") exportToCSV(`Raporti i Platform Earnings`, ["Data", "Booking ID", "Klienti", "Shoferi", "Total Fare", "Driver Share", "Platform Share", "Statusi"], platformEarningsRows);
                   }}
                   className="rounded-xl border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 font-bold px-4 py-2 text-xs transition cursor-pointer flex items-center gap-1.5"
@@ -1270,6 +1306,7 @@ export default function AdminPage() {
                       <th className="p-3.5">Telefon</th>
                       <th className="p-3.5">Email</th>
                       <th className="p-3.5 text-center">Total Bookings</th>
+                      <th className="p-3.5 text-center">Vlerësimi</th>
                       <th className="p-3.5 text-right">Driver Share (€)</th>
                       <th className="p-3.5 text-right">Company Share (€)</th>
                       <th className="p-3.5 text-right">Total Gross (€)</th>
@@ -1308,9 +1345,10 @@ export default function AdminPage() {
                       <td className="p-3.5 font-semibold text-slate-600">{row[1]}</td>
                       <td className="p-3.5 font-semibold text-slate-600">{row[2]}</td>
                       <td className="p-3.5 text-center font-bold text-slate-700">{row[3]}</td>
-                      <td className="p-3.5 text-right font-black text-emerald-600">{row[4]}</td>
-                      <td className="p-3.5 text-right font-black text-slate-800">{row[5]}</td>
-                      <td className="p-3.5 text-right font-black text-slate-900 bg-slate-50">{row[6]}</td>
+                      <td className="p-3.5 text-center font-bold text-amber-600">{row[4]}</td>
+                      <td className="p-3.5 text-right font-black text-emerald-600">{row[5]}</td>
+                      <td className="p-3.5 text-right font-black text-slate-800">{row[6]}</td>
+                      <td className="p-3.5 text-right font-black text-slate-900 bg-slate-50">{row[7]}</td>
                     </tr>
                   ))}
 
@@ -1346,9 +1384,10 @@ export default function AdminPage() {
                       <td className="p-3.5">{driversShareRows[driversShareRows.length - 1][1]}</td>
                       <td className="p-3.5">{driversShareRows[driversShareRows.length - 1][2]}</td>
                       <td className="p-3.5 text-center text-sm font-black">{driversShareRows[driversShareRows.length - 1][3]}</td>
-                      <td className="p-3.5 text-right text-sm text-emerald-600 font-black">{driversShareRows[driversShareRows.length - 1][4]}</td>
-                      <td className="p-3.5 text-right text-sm font-black">{driversShareRows[driversShareRows.length - 1][5]}</td>
-                      <td className="p-3.5 text-right text-base text-slate-900 font-black bg-slate-150">{driversShareRows[driversShareRows.length - 1][6]}</td>
+                      <td className="p-3.5 text-center font-bold"></td>
+                      <td className="p-3.5 text-right text-sm text-emerald-600 font-black">{driversShareRows[driversShareRows.length - 1][5]}</td>
+                      <td className="p-3.5 text-right text-sm font-black">{driversShareRows[driversShareRows.length - 1][6]}</td>
+                      <td className="p-3.5 text-right text-base text-slate-900 font-black bg-slate-150">{driversShareRows[driversShareRows.length - 1][7]}</td>
                     </tr>
                   )}
 
