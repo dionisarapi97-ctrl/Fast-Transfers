@@ -6,6 +6,7 @@ import GooglePlacesInput from "./GooglePlacesInput";
 import { calculatePrice } from "@/lib/priceCalculator";
 import { calculateDistance } from "@/lib/distanceCalculator";
 import { supabase } from "@/lib/supabaseClient";
+import { useLanguage } from "@/context/LanguageContext";
 
 const prefixes = [
   "+355", "+383", "+39", "+49", "+44", "+1", "+30", "+33", "+34", "+41", "+43", "+31", "+32", "+46", "+47", "+45", "+90"
@@ -13,6 +14,7 @@ const prefixes = [
 
 export default function HeroBooking() {
   const router = useRouter();
+  const { t, language } = useLanguage();
   const [step, setStep] = useState(1);
 
   const [customerName, setCustomerName] = useState("");
@@ -137,23 +139,21 @@ export default function HeroBooking() {
   const nextStep = () => {
     if (step === 1 && !canStep1) {
       if (!customerName || !phoneNumber) {
-        alert("Please enter your name and phone number.");
+        alert(language === "sq" ? "Ju lutem shkruani emrin dhe numrin tuaj të telefonit." : "Please enter your name and phone number.");
         return;
       }
-
       if (!pickupPlace || !dropoffPlace) {
-        alert("Please select pickup and destination from autocomplete suggestions.");
+        alert(language === "sq" ? "Ju lutem zgjidhni vendin e nisjes dhe mbërritjes nga sugjerimet." : "Please select pickup and destination from autocomplete suggestions.");
         return;
       }
-
       if (isAirportBooking && !flightNumber) {
-        alert("Flight number is required for airport departures/arrivals.");
+        alert(language === "sq" ? "Numri i fluturimit kërkohet për udhëtimet nga/drejt aeroportit." : "Flight number is required for airport departures/arrivals.");
         return;
       }
     }
 
     if (step === 2 && !canStep2) {
-      alert("Please fill in travel date, time and passenger count.");
+      alert(language === "sq" ? "Ju lutem plotësoni datën, orën dhe numrin e pasagjerëve." : "Please fill in travel date, time and passenger count.");
       return;
     }
 
@@ -243,13 +243,12 @@ export default function HeroBooking() {
         alt="Fast Transfers Premium Airport Taxi"
         className="absolute inset-0 h-full w-full object-cover object-center scale-105"
       />
-      {/* Sleek Dark Gradient Overlay with Premium Deep Obsidian Tint */}
+      {/* Sleek Dark Gradient Overlay */}
       <div className="absolute inset-0 bg-gradient-to-tr from-[#0b0f19]/96 via-[#0d1527]/90 to-[#101b35]/70" />
 
       {/* Ambient background glows */}
       <div className="absolute top-1/4 left-1/4 w-[350px] h-[350px] rounded-full bg-emerald-500/22 blur-[130px] pointer-events-none" />
       <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] rounded-full bg-blue-500/18 blur-[155px] pointer-events-none" />
-      <div className="absolute top-[20%] right-[-10%] w-[350px] h-[350px] rounded-full bg-teal-450/15 blur-[120px] pointer-events-none" />
 
       <div className="relative z-10 w-full max-w-[1600px] mx-auto px-6 md:px-12 grid gap-12 lg:grid-cols-12 items-center">
 
@@ -260,31 +259,41 @@ export default function HeroBooking() {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#10b981] opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-[#10b981]"></span>
             </span>
-            Premium Electric Fleet
+            {t("hero_badge")}
           </div>
 
           <h1 className="text-4xl sm:text-5xl lg:text-7xl font-extrabold leading-[1.1] tracking-tight bg-gradient-to-r from-slate-100 via-slate-200 to-emerald-400 bg-clip-text text-transparent">
-            Your Premium <br />
-            Airport Transfer <br />
-            in Albania
+            {language === "sq" ? (
+              <>Transferta Premium <br />nga Aeroporti <br />në Shqipëri</>
+            ) : language === "it" ? (
+              <>Trasferimenti Premium <br />dall'Aeroporto <br />in Albania</>
+            ) : language === "de" ? (
+              <>Premium-Flughafen- <br />transfer <br />in Albanien</>
+            ) : language === "fr" ? (
+              <>Transferts Aéroport <br />Premium <br />en Albanie</>
+            ) : language === "es" ? (
+              <>Traslados Premium <br />de Aeropuerto <br />en Albania</>
+            ) : (
+              <>Premium Airport <br />Transfers <br />in Albania</>
+            )}
           </h1>
 
           <p className="text-lg text-slate-400 max-w-xl leading-relaxed">
-            Experience premium private airport transfers from Tirana International Airport (TIA) to any destination in Albania. 100% electric, zero-emission fleet, professional English-speaking drivers, and fully fixed rates.
+            {t("hero_subtitle")}
           </p>
 
           <div className="pt-6 grid grid-cols-2 sm:grid-cols-3 gap-6 text-sm font-medium text-slate-300">
             <div className="flex items-center gap-2.5">
               <div className="flex items-center justify-center w-6 h-6 rounded-full bg-emerald-500/10 text-emerald-400">✓</div>
-              Fixed Rates
+              {t("fixed_rates")}
             </div>
             <div className="flex items-center gap-2.5">
               <div className="flex items-center justify-center w-6 h-6 rounded-full bg-emerald-500/10 text-[#10b981]">✓</div>
-              24/7 Support
+              {t("support_247")}
             </div>
             <div className="flex items-center gap-2.5">
               <div className="flex items-center justify-center w-6 h-6 rounded-full bg-emerald-500/10 text-emerald-400">✓</div>
-              Licensed Drivers
+              {t("licensed_drivers")}
             </div>
           </div>
         </div>
@@ -297,12 +306,12 @@ export default function HeroBooking() {
             <div className="mb-6 flex items-center justify-between border-b border-slate-850/40 pb-4">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.25em] text-emerald-450">
-                  Online Booking
+                  {t("online_booking")}
                 </p>
-                <h3 className="mt-1 text-xl font-bold text-slate-100">Fast Transfer</h3>
+                <h3 className="mt-1 text-xl font-bold text-slate-100">{t("fast_transfer")}</h3>
               </div>
               <span className="rounded-full bg-emerald-500/10 border border-emerald-500/20 px-3.5 py-1 text-xs font-bold text-emerald-400 shadow-sm">
-                Step {step} of 3
+                {t("step_of", { step, total: 3 })}
               </span>
             </div>
 
@@ -310,9 +319,9 @@ export default function HeroBooking() {
             {step === 1 && (
               <div className="space-y-4">
                 <div className="grid gap-4 md:grid-cols-2">
-                  <Input label="Full Name" value={customerName} onChange={setCustomerName} placeholder="Your name" />
+                  <Input label={t("full_name")} value={customerName} onChange={setCustomerName} placeholder={t("placeholder_name")} />
                   <div>
-                    <label className="mb-1.5 block text-xs font-semibold text-slate-400">Phone Number</label>
+                    <label className="mb-1.5 block text-xs font-semibold text-slate-400">{t("phone_number")}</label>
                     <div className="grid grid-cols-[90px_1fr] gap-2">
                       <select
                         value={phonePrefix}
@@ -328,18 +337,17 @@ export default function HeroBooking() {
                       <input
                         value={phoneNumber}
                         onChange={(e) => setPhoneNumber(e.target.value)}
-                        placeholder="Phone number"
+                        placeholder={t("placeholder_phone")}
                         className="w-full rounded-xl border border-slate-800/35 bg-slate-950/15 px-4 py-3 text-sm text-slate-200 outline-none placeholder:text-slate-600 focus:border-emerald-500/50 focus:bg-slate-950/45 transition"
                       />
                     </div>
                   </div>
                 </div>
 
-
                 <div className="grid gap-4 md:grid-cols-2">
                   <GooglePlacesInput
-                    label="Pickup Location"
-                    placeholder="Search pickup address..."
+                    label={t("pickup_location")}
+                    placeholder={t("placeholder_pickup")}
                     value={pickup}
                     onChange={(value, fromGoogle) => {
                       setPickup(value);
@@ -351,8 +359,8 @@ export default function HeroBooking() {
                     }}
                   />
                   <GooglePlacesInput
-                    label="Drop-off Destination"
-                    placeholder="Search drop-off address..."
+                    label={t("dropoff_destination")}
+                    placeholder={t("placeholder_dropoff")}
                     value={dropoff}
                     onChange={(value, fromGoogle) => {
                       setDropoff(value);
@@ -366,8 +374,8 @@ export default function HeroBooking() {
                 </div>
 
                 <div className="grid gap-4 md:grid-cols-2">
-                  <Input label={isAirportBooking ? "Flight Number *" : "Flight Number"} value={flightNumber} onChange={setFlightNumber} placeholder="e.g. W6 3891" />
-                  <Input label="Hotel / Accommodation Name" value={hotelName} onChange={setHotelName} placeholder="e.g. Plaza Hotel" />
+                  <Input label={isAirportBooking ? `${t("flight_number")} *` : t("flight_number")} value={flightNumber} onChange={setFlightNumber} placeholder={t("placeholder_flight")} />
+                  <Input label={t("hotel_name")} value={hotelName} onChange={setHotelName} placeholder={t("placeholder_hotel")} />
                 </div>
               </div>
             )}
@@ -376,12 +384,12 @@ export default function HeroBooking() {
             {step === 2 && (
               <div className="space-y-4">
                 <div className="grid gap-4 md:grid-cols-2">
-                  <Input label="Travel Date" type="date" value={date} onChange={setDate} />
-                  <Input label="Pickup Time" type="time" value={time} onChange={setTime} />
+                  <Input label={t("travel_date")} type="date" value={date} onChange={setDate} />
+                  <Input label={t("travel_time")} type="time" value={time} onChange={setTime} />
                 </div>
                 <div className="grid gap-4 md:grid-cols-2">
-                  <Input label="Passengers" type="number" min="1" value={passengers} onChange={(v) => setPassengers(Number(v))} />
-                  <Input label="Luggage Count" type="number" min="0" value={luggage} onChange={(v) => setLuggage(Number(v))} />
+                  <Input label={t("passengers")} type="number" min="1" value={passengers} onChange={(v) => setPassengers(Number(v))} />
+                  <Input label={t("luggage")} type="number" min="0" value={luggage} onChange={(v) => setLuggage(Number(v))} />
                 </div>
                 <div className="flex items-center gap-3 bg-slate-950/20 p-4 rounded-xl border border-slate-800/35 hover:border-emerald-500/25 transition">
                   <input
@@ -392,12 +400,12 @@ export default function HeroBooking() {
                     className="w-4 h-4 accent-emerald-500 cursor-pointer rounded bg-slate-950/40 border-slate-800"
                   />
                   <label htmlFor="babySeat" className="text-xs font-semibold text-slate-350 cursor-pointer select-none">
-                    👶 Request Baby / Child Car Seat (+10 €)
+                    👶 {t("baby_seat")}
                   </label>
                 </div>
                 <div className="grid gap-4 md:grid-cols-2">
-                  <Input label="Pickup Details (Optional)" value={pickupDetails} onChange={setPickupDetails} placeholder="e.g. gate, terminal details" />
-                  <Input label="Drop-off Details (Optional)" value={dropoffDetails} onChange={setDropoffDetails} placeholder="e.g. hotel lobby, villa door" />
+                  <Input label={t("pickup_details")} value={pickupDetails} onChange={setPickupDetails} placeholder="e.g. gate, terminal details" />
+                  <Input label={t("dropoff_details")} value={dropoffDetails} onChange={setDropoffDetails} placeholder="e.g. hotel lobby, villa door" />
                 </div>
               </div>
             )}
@@ -406,46 +414,36 @@ export default function HeroBooking() {
             {step === 3 && (
               <div className="space-y-4">
                 <div className="rounded-2xl border border-slate-800/60 bg-slate-950/30 p-4.5 space-y-2 text-xs text-slate-400">
-                  <h4 className="text-sm font-bold text-slate-200 mb-2 border-b border-slate-800/60 pb-1">Booking Summary</h4>
+                  <h4 className="text-sm font-bold text-slate-200 mb-2 border-b border-slate-800/60 pb-1">{t("booking_summary")}</h4>
                   <div className="grid grid-cols-2 gap-2">
-                    <p><span className="text-slate-550">Passenger:</span> {customerName}</p>
-                    <p><span className="text-slate-550">Phone:</span> {customerPhone}</p>
-                    <p className="col-span-2"><span className="text-slate-550 font-medium">From:</span> {pickup}</p>
-                    <p className="col-span-2"><span className="text-slate-550 font-medium">To:</span> {dropoff}</p>
-                    <p><span className="text-slate-550">Date:</span> {date}</p>
-                    <p><span className="text-slate-550">Time:</span> {time}</p>
-                    <p><span className="text-slate-550">Passengers:</span> {passengers}</p>
-                    <p><span className="text-slate-550">Luggage:</span> {luggage}</p>
-                    {flightNumber && <p><span className="text-slate-550">Flight No:</span> {flightNumber}</p>}
-                    {hotelName && <p><span className="text-slate-550">Hotel:</span> {hotelName}</p>}
-                    {routeInfo?.distanceText && <p><span className="text-slate-550">Distance:</span> {routeInfo.distanceText}</p>}
-                    {routeInfo?.durationText && <p><span className="text-slate-550">Est. Duration:</span> {routeInfo.durationText}</p>}
-                    {babySeat && <p className="col-span-2 text-emerald-450 font-bold">👶 Baby Car Seat Requested (+10 €)</p>}
-                  </div>
-
-                  <div className="mt-3.5 border-t border-slate-800/40 pt-3 space-y-1">
-                    <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Recommended Transfer Option</p>
-                    {passengers >= 5 && passengers <= 8 ? (
-                      <p className="text-emerald-450 font-bold text-xs">
-                        🚐 1 Mercedes-Benz Vito (Minivan) OR 🚗🚗 2 Electric Taxis
-                      </p>
-                    ) : (
-                      <p className="text-slate-200 font-bold text-xs">
-                        🚗 Toyota bZ4X (Premium Electric Sedan)
-                      </p>
-                    )}
+                    <p><span className="text-slate-550">{t("summary_passenger")}:</span> {customerName}</p>
+                    <p><span className="text-slate-550">{t("summary_phone")}:</span> {customerPhone}</p>
+                    <p className="col-span-2"><span className="text-slate-550 font-medium">{t("summary_from")}:</span> {pickup}</p>
+                    <p className="col-span-2"><span className="text-slate-550 font-medium">{t("summary_to")}:</span> {dropoff}</p>
+                    <p><span className="text-slate-550">{t("summary_date")}:</span> {date}</p>
+                    <p><span className="text-slate-550">{t("summary_time")}:</span> {time}</p>
+                    <p><span className="text-slate-550">{t("summary_passengers")}:</span> {passengers}</p>
+                    <p><span className="text-slate-550">{t("summary_luggage")}:</span> {luggage}</p>
+                    {flightNumber && <p><span className="text-slate-550">{t("flight_number")}:</span> {flightNumber}</p>}
+                    {hotelName && <p><span className="text-slate-550">{t("hotel_name")}:</span> {hotelName}</p>}
+                    {routeInfo?.distanceText && <p><span className="text-slate-550">{t("summary_distance")}:</span> {routeInfo.distanceText}</p>}
+                    {routeInfo?.durationText && <p><span className="text-slate-550">{t("summary_duration")}:</span> {routeInfo.durationText}</p>}
+                    {babySeat && <p className="col-span-2 text-emerald-450 font-bold">👶 {t("baby_seat")}</p>}
                   </div>
                 </div>
 
                 <div className="rounded-xl bg-emerald-950/5 border border-emerald-900/15 p-4 flex justify-between items-center shadow-sm">
                   <div>
-                    <p className="text-[10px] text-emerald-450 uppercase tracking-wider font-semibold">Estimated Price</p>
+                    <p className="text-[10px] text-emerald-455 uppercase tracking-wider font-semibold">{t("est_price")}</p>
                     <p className="text-3xl font-black text-emerald-400 tracking-tight">
-                      {estimatedPrice ? `${estimatedPrice} €` : "Calculating..."}
+                      {estimatedPrice ? `${estimatedPrice} €` : "..."}
                     </p>
                   </div>
                   <p className="text-[9px] text-slate-500 text-right max-w-[170px] leading-relaxed">
-                    *Fixed price includes tolls, wait time and luggage. Free cancellation up to 24h prior to pickup.
+                    {language === "sq" 
+                      ? "*Çmimi fiks përfshin taksat rrugore, kohën e pritjes dhe bagazhet. Anullim falas deri në 24 orë para marrjes."
+                      : "*Fixed price includes tolls, wait time and luggage. Free cancellation up to 24h prior to pickup."
+                    }
                   </p>
                 </div>
 
@@ -459,8 +457,7 @@ export default function HeroBooking() {
                     className="w-4 h-4 accent-emerald-500 cursor-pointer rounded bg-slate-950/40 border-slate-850"
                   />
                   <label htmlFor="privacy-hero" className="text-[10px] text-slate-400 leading-relaxed cursor-pointer select-none">
-                    Pranoj Politikën e Privatësisë dhe jap pëlqimin tim për mbledhjen dhe ruajtjen e sigurt të të dhënave të mia për qëllim shërbimi.<br />
-                    <span className="text-slate-550">(I accept the Privacy Policy and consent to the secure collection & storage of my personal data for this transfer service.)</span>
+                    {t("privacy_disclaimer")}
                   </label>
                 </div>
               </div>
@@ -474,7 +471,7 @@ export default function HeroBooking() {
                   disabled={step === 1 || isSaving}
                   className="rounded-xl border border-slate-800/35 bg-slate-950/15 px-5 py-2.5 text-xs font-bold text-slate-400 transition hover:bg-slate-950/25 disabled:opacity-20 disabled:cursor-not-allowed cursor-pointer"
                 >
-                  Back
+                  {t("back")}
                 </button>
 
                 {step < 3 ? (
@@ -482,7 +479,7 @@ export default function HeroBooking() {
                     onClick={nextStep}
                     className="rounded-xl bg-emerald-600 px-6 py-2.5 text-xs font-bold text-white transition duration-300 hover:scale-105 hover:bg-emerald-500 hover:shadow-[0_0_20px_rgba(16,185,129,0.35)] active:scale-95 cursor-pointer"
                   >
-                    Continue
+                    {t("continue")}
                   </button>
                 ) : (
                   <button
@@ -490,7 +487,7 @@ export default function HeroBooking() {
                     disabled={!canConfirm}
                     className="rounded-xl bg-emerald-600 px-6 py-2.5 text-xs font-bold text-white transition duration-300 hover:scale-105 hover:bg-emerald-500 hover:shadow-[0_0_25px_rgba(16,185,129,0.4)] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                   >
-                    {isSaving ? "Saving..." : "Confirm Booking"}
+                    {isSaving ? "..." : t("confirm_booking")}
                   </button>
                 )}
               </div>

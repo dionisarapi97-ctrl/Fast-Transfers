@@ -1,36 +1,40 @@
 "use client";
 
+import { useLanguage } from "@/context/LanguageContext";
+
 export default function WhyUs() {
+  const { t } = useLanguage();
+
   const features = [
     {
       icon: "⚡",
-      title: "100% Electric Fleet",
-      desc: "Travel in modern electric vehicles for absolute comfort and zero environmental impact.",
+      title: t("why_feat1_title"),
+      desc: t("why_feat1_desc"),
     },
     {
       icon: "🏷️",
-      title: "Fixed Fares",
-      desc: "No hidden costs or dynamic surcharges. The price quoted is exactly what you pay.",
+      title: t("why_feat2_title"),
+      desc: t("why_feat2_desc"),
     },
     {
       icon: "🕒",
-      title: "24/7 Availability",
-      desc: "We are available 24 hours a day, 7 days a week, regardless of your flight arrival time.",
+      title: t("why_feat3_title"),
+      desc: t("why_feat3_desc"),
     },
     {
       icon: "✈️",
-      title: "Live Flight Tracking",
-      desc: "We monitor your flight status in real time. If you are delayed, we wait for you free of charge.",
+      title: t("why_feat4_title"),
+      desc: t("why_feat4_desc"),
     },
     {
       icon: "👤",
-      title: "Professional Drivers",
-      desc: "Licensed, polite, English-speaking professional drivers who are happy to assist with luggage.",
+      title: t("why_feat5_title"),
+      desc: t("why_feat5_desc"),
     },
     {
       icon: "👶",
-      title: "Free Child Seats",
-      desc: "Your child's safety is our priority. We offer clean, standard child seats free of charge.",
+      title: t("why_feat6_title"),
+      desc: t("why_feat6_desc"),
     },
   ];
 
@@ -38,13 +42,13 @@ export default function WhyUs() {
     <div className="max-w-6xl mx-auto">
       <div className="text-center space-y-4 mb-14">
         <p className="text-xs font-bold uppercase tracking-[0.25em] text-emerald-500">
-          Why Choose Us
+          {t("why_us")}
         </p>
         <h2 className="text-3xl md:text-5xl font-black text-slate-100 leading-tight">
-          Eco-Friendly & Reliable Transfers
+          {t("why_title")}
         </h2>
         <p className="text-slate-400 max-w-xl mx-auto text-sm md:text-base leading-relaxed">
-          We provide the highest standard of private transportation in Albania, combining state-of-the-art electric vehicles with exceptional passenger hospitality.
+          {t("why_sub")}
         </p>
       </div>
 

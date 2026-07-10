@@ -1,11 +1,24 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import { useLanguage } from "@/context/LanguageContext";
+
+const languages = [
+  { code: "sq", label: "Shqip", flag: "🇦🇱" },
+  { code: "en", label: "English", flag: "🇬🇧" },
+  { code: "it", label: "Italiano", flag: "🇮🇹" },
+  { code: "de", label: "Deutsch", flag: "🇩🇪" },
+  { code: "fr", label: "Français", flag: "🇫🇷" },
+  { code: "es", label: "Español", flag: "🇪🇸" },
+];
 
 export default function Navbar() {
+  const { language, setLanguage, t } = useLanguage();
   const [session, setSession] = useState(null);
   const [rolePath, setRolePath] = useState("/client/dashboard");
+  const [langOpen, setLangOpen] = useState(false);
+  const dropdownRef = useRef(null);
 
   useEffect(() => {
     // Get initial session
@@ -24,7 +37,18 @@ export default function Navbar() {
       }
     });
 
-    return () => subscription.unsubscribe();
+    // Click outside dropdown handler
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setLangOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      subscription.unsubscribe();
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
   }, []);
 
   const checkDriverRole = async (email) => {
@@ -61,6 +85,8 @@ export default function Navbar() {
     }
   };
 
+  const currentLang = languages.find((l) => l.code === language) || languages[0];
+
   return (
     <nav className="fixed top-0 left-0 z-50 flex h-[90px] w-full items-center justify-between px-6 md:px-12 backdrop-blur-xl bg-slate-950/45 border-b border-slate-900/85">
       <div>
@@ -78,19 +104,19 @@ export default function Navbar() {
           onClick={() => handleScrollTo("destinations")}
           className="hover:text-slate-100 transition duration-200 cursor-pointer"
         >
-          Destinations
+          {t("destinations")}
         </button>
         <button
           onClick={() => handleScrollTo("whyus")}
           className="hover:text-slate-100 transition duration-200 cursor-pointer"
         >
-          Why Us
+          {t("why_us")}
         </button>
         <button
           onClick={() => handleScrollTo("faq")}
           className="hover:text-slate-100 transition duration-200 cursor-pointer"
         >
-          FAQ
+          {t("faq")}
         </button>
 
         {session ? (
@@ -98,39 +124,74 @@ export default function Navbar() {
             href={rolePath}
             className="hover:text-slate-100 text-[#00D084] font-bold transition duration-200 cursor-pointer"
           >
-            My Account
+            {t("my_account")}
           </a>
         ) : (
           <a
             href="/login"
             className="hover:text-slate-100 transition duration-200 cursor-pointer"
           >
-            Log In
+            {t("log_in")}
           </a>
         )}
 
         <a
           href="tel:+355693048000"
-          className="text-emerald-500 hover:text-emerald-400 transition duration-200 flex items-center gap-1.5"
+          className="text-emerald-500 hover:text-emerald-400 transition duration-200 flex items-center gap-1.5 font-semibold"
         >
           📞 +355 69 304 8000
         </a>
       </div>
 
+      {/* Actions (Language Switcher, Auth links, Book Now button) */}
       <div className="flex items-center gap-4">
+        
+        {/* Language selector dropdown */}
+        <div className="relative" ref={dropdownRef}>
+          <button
+            onClick={() => setLangOpen(!langOpen)}
+            className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 hover:bg-white/10 px-3 py-1.5 text-xs font-bold text-white transition duration-200 cursor-pointer"
+          >
+            <span>{currentLang.flag}</span>
+            <span className="uppercase text-[10px] tracking-wide">{currentLang.code}</span>
+            <span className="text-[8px] opacity-60">▼</span>
+          </button>
+          
+          {langOpen && (
+            <div className="absolute right-0 mt-2 w-36 rounded-2xl border border-white/15 bg-slate-950 p-1.5 shadow-2xl z-50 space-y-0.5">
+              {languages.map((l) => (
+                <button
+                  key={l.code}
+                  onClick={() => {
+                    setLanguage(l.code);
+                    setLangOpen(false);
+                  }}
+                  className={`w-full flex items-center gap-2.5 rounded-xl px-3 py-2 text-left text-xs font-bold transition hover:bg-white/10 cursor-pointer ${
+                    language === l.code ? "text-[#00D084] bg-white/5" : "text-slate-350"
+                  }`}
+                >
+                  <span className="text-sm">{l.flag}</span>
+                  <span>{l.label}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Mobile profile link / desktop fallback */}
         {session ? (
           <a
             href={rolePath}
             className="md:hidden text-xs font-extrabold text-[#00D084] hover:underline transition"
           >
-            Profile
+            {t("profile")}
           </a>
         ) : (
           <a
             href="/login"
             className="md:hidden text-xs font-extrabold text-slate-300 hover:text-white transition"
           >
-            Log In
+            {t("log_in")}
           </a>
         )}
 
@@ -138,7 +199,7 @@ export default function Navbar() {
           onClick={handleBookNow}
           className="rounded-full bg-emerald-600 px-6 py-2.5 text-xs font-bold text-white transition-all duration-300 hover:scale-105 hover:bg-emerald-500 hover:shadow-[0_0_20px_rgba(16,185,129,0.3)] active:scale-95 cursor-pointer"
         >
-          Book Now
+          {t("book_now")}
         </button>
       </div>
     </nav>

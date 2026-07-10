@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { fixedFares } from "../data/fares";
+import { useLanguage } from "@/context/LanguageContext";
 
 const destinationImages = {
   "Tirana Center": "/images/tirana.png",
@@ -35,6 +36,7 @@ const popularDestinations = [
 
 export default function Destinations() {
   const [search, setSearch] = useState("");
+  const { t, language } = useLanguage();
 
   const handleSelectRoute = (fare) => {
     const pickupLocation = "Tirana International Airport Nënë Tereza (TIA), Rinas, Albania";
@@ -72,13 +74,13 @@ export default function Destinations() {
       {/* Header */}
       <div className="text-center space-y-4">
         <p className="text-xs font-bold uppercase tracking-[0.25em] text-emerald-500">
-          Popular Destinations
+          {t("dest_title")}
         </p>
         <h2 className="text-3xl md:text-5xl font-black text-slate-100 leading-tight">
-          Fixed Prices, No Hidden Fees
+          {t("dest_sub")}
         </h2>
         <p className="text-slate-400 max-w-xl mx-auto text-sm md:text-base leading-relaxed">
-          Choose one of our popular airport transfer routes with fully transparent fixed rates. Book in seconds and secure your ride.
+          {t("dest_desc")}
         </p>
       </div>
 
@@ -99,7 +101,7 @@ export default function Destinations() {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 to-transparent" />
                 <span className="absolute bottom-3 left-3 bg-emerald-500/10 border border-emerald-500/20 backdrop-blur-md rounded-full px-3 py-1 text-[9px] font-bold uppercase tracking-wider text-emerald-450">
-                  Fixed from TIA
+                  {t("fixed_from_tia")}
                 </span>
               </div>
 
@@ -113,21 +115,21 @@ export default function Destinations() {
               </div>
 
               <p className="text-xs text-emerald-500 font-bold tracking-wide mb-3">
-                {destinationDetails[fare.to] || `${fare.distanceKm} km direct route`}
+                {destinationDetails[fare.to] || `${fare.distanceKm} km`}
               </p>
 
               <p className="text-xs text-slate-400 leading-relaxed">
-                Direct private transfer in a premium electric vehicle.
+                {t("direct_private_desc")}
               </p>
 
               <div className="mt-6 space-y-2.5 border-t border-slate-800/60 pt-4 text-[11px] text-slate-400">
                 <div className="flex justify-between">
-                  <span>Distance &amp; Price:</span>
+                  <span>{t("distance_price")}:</span>
                   <span className="text-slate-200 font-medium">{fare.distanceKm} km · {fare.priceLek.toLocaleString()} Lek</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Child Seat Option:</span>
-                  <span className="text-slate-200 font-medium">+10 € (Optional)</span>
+                  <span>{t("child_seat_option")}:</span>
+                  <span className="text-slate-200 font-medium">+10 € ({language === "sq" ? "Opsionale" : "Optional"})</span>
                 </div>
               </div>
             </div>
@@ -136,7 +138,7 @@ export default function Destinations() {
               onClick={() => handleSelectRoute(fare)}
               className="mt-6 w-full rounded-2xl bg-slate-950/40 py-3 text-xs font-bold text-slate-300 transition-all duration-200 border border-slate-800/60 group-hover:bg-[#10b981] group-hover:text-black group-hover:border-transparent group-hover:shadow-[0_0_15px_rgba(16,185,129,0.3)] active:scale-95 cursor-pointer"
             >
-              Book This Route
+              {t("book_this_route")}
             </button>
           </div>
         ))}
@@ -146,10 +148,10 @@ export default function Destinations() {
       <div className="rounded-3xl border border-slate-800/80 bg-slate-900/10 p-6 md:p-8 space-y-6 shadow-xl backdrop-blur-md">
         <div className="space-y-2">
           <h3 className="text-lg md:text-xl font-bold text-slate-100">
-            Check Fare for 50+ Other Cities
+            {t("check_other_cities")}
           </h3>
           <p className="text-xs text-slate-450">
-            Enter your destination below to instantly view distances, fares in Euros (€) and Albanian Lek (Lek) from Tirana Airport.
+            {t("enter_dest_desc")}
           </p>
         </div>
 
@@ -158,7 +160,7 @@ export default function Destinations() {
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search city (e.g. Prishtine, Kavaje, Korce, Dhermi...)"
+            placeholder={t("search_city_placeholder")}
             className="w-full rounded-xl border border-slate-800/85 bg-slate-950/45 pl-10 pr-4 py-3 text-sm text-slate-200 outline-none placeholder:text-slate-650 focus:border-emerald-500/50 focus:bg-slate-950/65 transition"
           />
         </div>
@@ -172,7 +174,7 @@ export default function Destinations() {
                   <div>
                     <h4 className="font-bold text-slate-200 text-sm">{result.to}</h4>
                     <p className="text-[10px] text-slate-500 mt-0.5">
-                      Distance from TIA: <span className="text-slate-350">{result.distanceKm} km</span>
+                      {language === "sq" ? "Distanca nga TIA:" : "Distance from TIA:"} <span className="text-slate-350">{result.distanceKm} km</span>
                     </p>
                   </div>
                   
@@ -186,20 +188,23 @@ export default function Destinations() {
                       onClick={() => handleSelectRoute(result)}
                       className="rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-2 text-[10px] transition cursor-pointer"
                     >
-                      Book Ride
+                      {t("book_ride")}
                     </button>
                   </div>
                 </div>
               ))
             ) : (
               <div className="text-center py-6 text-xs text-slate-500">
-                No matching destinations found. Standard kilometer tariff will apply.
+                {t("no_dest_found")}
               </div>
             )}
           </div>
         ) : (
           <div className="rounded-xl border border-slate-850/40 bg-slate-950/10 p-4 text-[11px] text-slate-500 text-center">
-            Type your city in the search bar above to look up fixed rates for all of Albania, Kosovo, and Montenegro.
+            {language === "sq" 
+              ? "Shkruani qytetin tuaj në shiritin e kërkimit më sipër për të parë tarifat fikse për të gjithë Shqipërinë, Kosovën dhe Malin e Zi."
+              : "Type your city in the search bar above to look up fixed rates for all of Albania, Kosovo, and Montenegro."
+            }
           </div>
         )}
       </div>
