@@ -79,7 +79,7 @@ export const translations = {
     why_feat2_title: "Çmime Fikse & Transparente",
     why_feat2_desc: "Asnjë tarifë e fshehur. Çmimi i shfaqur gjatë rezervimit është ai që do të paguani.",
     why_feat3_title: "Mbështetje 24/7",
-    why_feat3_desc: "Skuadra jonë është në gatishmëri në çdo kohë për të ndihmuar me rezervimet tuaja.",
+    why_feat3_desc: "Skuadra jonë është në gatishmëri në çdo kohë për të ndihmuar med rezervimet tuaja.",
     why_feat4_title: "Ndjekja e Fluturimit",
     why_feat4_desc: "Ne ndjekim statusin e fluturimit tuaj në kohë reale. Nëse vonohet, ne ju presim pa pagesë.",
     why_feat5_title: "Shoferë Profesionistë",
@@ -116,7 +116,22 @@ export const translations = {
 
     // Footer
     footer_desc: "Fast Transfers - Shërbimi premium i taksive dhe transfertave elektrike në Shqipëri.",
-    footer_rights: "Të gjitha të drejtat e rezervuara."
+    footer_rights: "Të gjitha të drejtat e rezervuara.",
+
+    // Login & Signup Pages
+    login_title: "Hyni në Llogari",
+    signup_title: "Regjistrim Klienti",
+    email_label: "Adresa Email",
+    password_label: "Fjalëkalimi",
+    confirm_password_label: "Konfirmo Fjalëkalimin",
+    button_login: "Kyçu",
+    button_signup: "Regjistrohu",
+    logging_in: "Duke u kyçur...",
+    signing_up: "Duke u regjistruar...",
+    new_client_prompt: "Klient i ri? Regjistrohu këtu",
+    existing_client_prompt: "Keni llogari? Hyni këtu",
+    driver_notice: "*Llogaritë e shoferëve krijohen vetëm nga administratori.",
+    placeholder_full_name: "p.sh. Dionis Arapi"
   },
   en: {
     destinations: "Destinations",
@@ -218,7 +233,22 @@ export const translations = {
     faq_q4: "How do I find the driver at the airport?",
     faq_a4: "The driver will wait for you in the arrivals hall holding a sign with your name.",
     footer_desc: "Fast Transfers - Premium electric taxi and transfer service in Albania.",
-    footer_rights: "All rights reserved."
+    footer_rights: "All rights reserved.",
+
+    // Login & Signup Pages
+    login_title: "Sign In to Account",
+    signup_title: "Client Registration",
+    email_label: "Email Address",
+    password_label: "Password",
+    confirm_password_label: "Confirm Password",
+    button_login: "Sign In",
+    button_signup: "Sign Up",
+    logging_in: "Signing in...",
+    signing_up: "Signing up...",
+    new_client_prompt: "New client? Sign Up here",
+    existing_client_prompt: "Already have an account? Sign In here",
+    driver_notice: "*Driver accounts are created only by the administrator.",
+    placeholder_full_name: "e.g. John Doe"
   },
   it: {
     destinations: "Destinazioni",
@@ -320,7 +350,22 @@ export const translations = {
     faq_q4: "Come trovo l'autista in aeroporto?",
     faq_a4: "L'autista ti aspetterà nella sala arrivi con un cartello con il tuo nome.",
     footer_desc: "Fast Transfers - Servizio taxi e trasferimenti elettrici premium in Albania.",
-    footer_rights: "Tutti i diritti riservati."
+    footer_rights: "Tutti i diritti riservati.",
+
+    // Login & Signup Pages
+    login_title: "Accedi al tuo Account",
+    signup_title: "Registrazione Cliente",
+    email_label: "Indirizzo Email",
+    password_label: "Password",
+    confirm_password_label: "Conferma Password",
+    button_login: "Accedi",
+    button_signup: "Registrati",
+    logging_in: "Accesso in corso...",
+    signing_up: "Registrazione in corso...",
+    new_client_prompt: "Nuovo cliente? Registrati qui",
+    existing_client_prompt: "Hai già un account? Accedi qui",
+    driver_notice: "*Gli account autista vengono creati solo dall'amministratore.",
+    placeholder_full_name: "es. Mario Rossi"
   },
   de: {
     destinations: "Reiseziele",
@@ -422,7 +467,22 @@ export const translations = {
     faq_q4: "Wie finde ich den Fahrer am Flughafen?",
     faq_a4: "Der Fahrer erwartet Sie in der Ankunftshalle mit einem Schild mit Ihrem Namen.",
     footer_desc: "Fast Transfers - Premium-Elektro-Taxi und Transferservice in Albanien.",
-    footer_rights: "Alle Rechte vorbehalten."
+    footer_rights: "Alle Rechte vorbehalten.",
+
+    // Login & Signup Pages
+    login_title: "Konto-Anmeldung",
+    signup_title: "Kundenregistrierung",
+    email_label: "E-Mail-Adresse",
+    password_label: "Passwort",
+    confirm_password_label: "Passwort bestätigen",
+    button_login: "Anmelden",
+    button_signup: "Registrieren",
+    logging_in: "Anmeldung läuft...",
+    signing_up: "Registrierung läuft...",
+    new_client_prompt: "Neuer Kunde? Hier registrieren",
+    existing_client_prompt: "Haben Sie bereits ein Konto? Hier anmelden",
+    driver_notice: "*Fahrerkonten werden nur vom Administrator erstellt.",
+    placeholder_full_name: "z.B. Max Mustermann"
   },
   fr: {
     destinations: "Destinations",
@@ -488,7 +548,7 @@ export const translations = {
     loading_booking: "Chargement de la réservation...",
     why_title: "Pourquoi choisir Fast Transfers?",
     why_sub: "Confort premium, sécurité maximale et respect de l'environnement.",
-    why_feat1_title: "Flotte 100% électrique",
+    why_feat1_title: "Flotte 100 % électrique",
     why_feat1_desc: "Voyagez à bord de nos véhicules électriques modernes pour un confort absolu et sans impact.",
     why_feat2_title: "Tarifs Fixes & Transparents",
     why_feat2_desc: "Aucun frais caché. Le prix calculé est exactement ce que vous paierez.",
@@ -511,7 +571,7 @@ export const translations = {
     check_other_cities: "Vérifier le tarif pour 50+ autres villes",
     enter_dest_desc: "Entrez votre destination ci-dessous pour voir la distance et les tarifs en Euro et Lek depuis l'aéroport.",
     search_city_placeholder: "Rechercher une ville (ex. Durres, Vlore, Saranda, Shkoder...)",
-    no_dest_found: "Aucune destination correspondante trouvée. Le tarif kilométrique standard s'appliquera.",
+    no_dest_found: "Aucune destination correspondante trouvée. Le tarif kilométrique standard s'appliquerera.",
     book_ride: "Réserver le trajet",
     faq_title: "Foire Aux Questions (FAQ)",
     faq_sub: "Trouvez des réponses aux questions fréquemment posées sur notre service premium.",
@@ -524,7 +584,22 @@ export const translations = {
     faq_q4: "Comment trouver le chauffeur à l'aéroport?",
     faq_a4: "Le chauffeur vous attendra dans le hall des arrivées avec un panneau à votre nom.",
     footer_desc: "Fast Transfers - Service premium de taxi et transfert électrique en Albanie.",
-    footer_rights: "Tous droits réservés."
+    footer_rights: "Tous droits réservés.",
+
+    // Login & Signup Pages
+    login_title: "Se connecter à votre compte",
+    signup_title: "Inscription Client",
+    email_label: "Adresse E-mail",
+    password_label: "Mot de passe",
+    confirm_password_label: "Confirmer le mot de passe",
+    button_login: "Se connecter",
+    button_signup: "S'inscrire",
+    logging_in: "Connexion en cours...",
+    signing_up: "Inscription en cours...",
+    new_client_prompt: "Nouveau client? Inscrivez-vous ici",
+    existing_client_prompt: "Vous avez déjà un compte? Connectez-vous ici",
+    driver_notice: "*Les comptes chauffeurs sont créés uniquement par l'administrateur.",
+    placeholder_full_name: "ex. Jean Dupont"
   },
   es: {
     destinations: "Destinos",
@@ -620,12 +695,27 @@ export const translations = {
     faq_q1: "¿Cómo pago mi traslado?",
     faq_a1: "Puede pagar en efectivo (Cash) directamente al conductor al llegar a su destino.",
     faq_q2: "¿Qué pasa si mi vuelo se retrasa?",
-    faq_a2: "Nuestros conductores monitorean el estado de su vuelo y le esperarán sin coste adicional.",
+    faq_a2: "Nuestros conductores monitorear el estado de su vuelo y le esperarán sin coste adicional.",
     faq_q3: "¿Los precios son por persona o por coche?",
     faq_a3: "Todas nuestras tarifas son por vehículo (para todo el grupo), no por persona.",
     faq_q4: "¿Cómo encuentro al conductor en el aeropuerto?",
     faq_a4: "El conductor le esperará en la sala de llegadas con un cartel con su nombre.",
     footer_desc: "Fast Transfers - Servicio premium de taxi y traslado eléctrico en Albania.",
-    footer_rights: "Todos los derechos reservados."
+    footer_rights: "Todos los derechos reservados.",
+
+    // Login & Signup Pages
+    login_title: "Iniciar sesión en su cuenta",
+    signup_title: "Registro de Cliente",
+    email_label: "Dirección de Correo",
+    password_label: "Contraseña",
+    confirm_password_label: "Confirmar contraseña",
+    button_login: "Iniciar Sesión",
+    button_signup: "Registrarse",
+    logging_in: "Iniciando sesión...",
+    signing_up: "Registrando...",
+    new_client_prompt: "¿Nuevo cliente? Regístrese aquí",
+    existing_client_prompt: "¿Ya tiene una cuenta? Inicie sesión aquí",
+    driver_notice: "*Las cuentas de conductor solo son creadas por el administrador.",
+    placeholder_full_name: "ej. Juan Pérez"
   }
 };

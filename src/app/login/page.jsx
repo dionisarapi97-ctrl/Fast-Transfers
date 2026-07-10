@@ -1,15 +1,28 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
+import { useLanguage } from "@/context/LanguageContext";
+
+const languages = [
+  { code: "sq", label: "Shqip", flag: "🇦🇱" },
+  { code: "en", label: "English", flag: "🇬🇧" },
+  { code: "it", label: "Italiano", flag: "🇮🇹" },
+  { code: "de", label: "Deutsch", flag: "🇩🇪" },
+  { code: "fr", label: "Français", flag: "🇫🇷" },
+  { code: "es", label: "Español", flag: "🇪🇸" },
+];
 
 export default function LoginPage() {
   const router = useRouter();
+  const { t, language, setLanguage } = useLanguage();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const [langOpen, setLangOpen] = useState(false);
+  const dropdownRef = useRef(null);
 
   // If already logged in, redirect to appropriate page
   useEffect(() => {
@@ -20,11 +33,19 @@ export default function LoginPage() {
       }
     }
     checkActiveSession();
+
+    // Click outside dropdown handler
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setLangOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const handleRoleRedirect = async (userEmail) => {
     try {
-      // Check if email exists in drivers table
       const { data: driver, error } = await supabase
         .from("drivers")
         .select("id, status")
@@ -51,7 +72,7 @@ export default function LoginPage() {
     setLoading(true);
 
     if (!email || !password) {
-      setErrorMsg("Ju lutem plotësoni të gjitha fushat.");
+      setErrorMsg(language === "sq" ? "Ju lutem plotësoni të gjitha fushat." : "Please fill in all fields.");
       setLoading(false);
       return;
     }
@@ -63,7 +84,11 @@ export default function LoginPage() {
       });
 
       if (error) {
-        setErrorMsg(error.message === "Invalid login credentials" ? "Email ose fjalëkalim i gabuar." : error.message);
+        setErrorMsg(
+          error.message === "Invalid login credentials"
+            ? (language === "sq" ? "Email ose fjalëkalim i gabuar." : "Incorrect email or password.")
+            : error.message
+        );
         setLoading(false);
         return;
       }
@@ -72,13 +97,48 @@ export default function LoginPage() {
         await handleRoleRedirect(data.user.email);
       }
     } catch (err) {
-      setErrorMsg("Ndodhi një gabim gjatë hyrjes. Provoni përsëri.");
+      setErrorMsg(language === "sq" ? "Ndodhi një gabim gjatë hyrjes. Provoni përsëri." : "An error occurred during log in. Try again.");
       setLoading(false);
     }
   };
 
+  const currentLang = languages.find((l) => l.code === language) || languages[0];
+
   return (
-    <main className="min-h-screen bg-[#07110f] text-white flex items-center justify-center p-6">
+    <main className="min-h-screen bg-[#07110f] text-white flex items-center justify-center p-6 relative">
+      
+      {/* Floating Language Switcher Top-Right */}
+      <div className="absolute top-6 right-6" ref={dropdownRef}>
+        <button
+          onClick={() => setLangOpen(!langOpen)}
+          className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 hover:bg-white/10 px-3.5 py-2 text-xs font-bold text-white transition duration-200 cursor-pointer"
+        >
+          <span>{currentLang.flag}</span>
+          <span className="uppercase text-[10px] tracking-wide">{currentLang.code}</span>
+          <span className="text-[8px] opacity-60">▼</span>
+        </button>
+        
+        {langOpen && (
+          <div className="absolute right-0 mt-2 w-36 rounded-2xl border border-white/15 bg-slate-950 p-1.5 shadow-2xl z-50 space-y-0.5">
+            {languages.map((l) => (
+              <button
+                key={l.code}
+                onClick={() => {
+                  setLanguage(l.code);
+                  setLangOpen(false);
+                }}
+                className={`w-full flex items-center gap-2.5 rounded-xl px-3 py-2 text-left text-xs font-bold transition hover:bg-white/10 cursor-pointer ${
+                  language === l.code ? "text-[#00D084] bg-white/5" : "text-slate-350"
+                }`}
+              >
+                <span className="text-sm">{l.flag}</span>
+                <span>{l.label}</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
       <div className="w-full max-w-md rounded-[32px] border border-white/10 bg-white/5 p-8 md:p-10 shadow-2xl backdrop-blur-xl space-y-8">
         
         {/* Header */}
@@ -88,7 +148,7 @@ export default function LoginPage() {
             Fast Transfers
           </h2>
           <p className="text-xs uppercase tracking-widest font-bold text-slate-400">
-            Hyni në Llogari (Sign In)
+            {t("login_title")}
           </p>
         </div>
 
@@ -102,19 +162,19 @@ export default function LoginPage() {
         {/* Form */}
         <form onSubmit={handleLogin} className="space-y-5">
           <div className="space-y-1.5">
-            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Email Address</label>
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">{t("email_label")}</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="shembull@email.com"
+              placeholder="example@email.com"
               className="w-full rounded-2xl border border-white/15 bg-white/5 px-5 py-4 text-sm text-white outline-none focus:border-[#00D084] focus:bg-white/10 transition"
               required
             />
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Password</label>
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">{t("password_label")}</label>
             <input
               type="password"
               value={password}
@@ -130,23 +190,23 @@ export default function LoginPage() {
             disabled={loading}
             className="w-full rounded-full bg-[#00D084] hover:bg-[#00b06f] disabled:opacity-50 text-white font-extrabold py-4 text-sm tracking-wider uppercase transition-all duration-300 shadow-[0_0_20px_rgba(0,208,132,0.2)] hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
           >
-            {loading ? "Duke u kyçur..." : "Kyçu (Sign In)"}
+            {loading ? t("logging_in") : t("button_login")}
           </button>
         </form>
 
         {/* Links */}
-        <div className="text-center text-xs text-slate-450 border-t border-white/10 pt-6 space-y-2">
+        <div className="text-center text-xs text-slate-455 border-t border-white/10 pt-6 space-y-2">
           <p>
-            Klient i ri?{" "}
+            {t("new_client_prompt")?.split("?")[0]}?{" "}
             <span 
               onClick={() => router.push("/signup")} 
               className="text-[#00D084] hover:underline font-bold cursor-pointer"
             >
-              Regjistrohu Këtu
+              {t("button_signup")}
             </span>
           </p>
           <p className="text-[10px] text-white/30 font-medium">
-            *Llogaritë e shoferëve krijohen vetëm nga administratori.
+            {t("driver_notice")}
           </p>
         </div>
 
