@@ -15,12 +15,16 @@ function BookingSuccessContent() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchBooking() {
-      if (!bookingId) {
-        setIsLoading(false);
-        return;
-      }
+    // If there is no search query in the browser address bar at all, stop loading immediately
+    if (typeof window !== "undefined" && !window.location.search) {
+      setIsLoading(false);
+      return;
+    }
 
+    if (!bookingId) return; // Wait for Next.js to parse the ID from the URL
+
+    async function fetchBooking() {
+      setIsLoading(true);
       const { data, error } = await supabase
         .from("bookings")
         .select("*")
@@ -28,12 +32,11 @@ function BookingSuccessContent() {
         .single();
 
       if (error) {
-        console.error(error);
-        setIsLoading(false);
-        return;
+        console.error("Error fetching booking details:", error.message);
+        setBooking(null);
+      } else {
+        setBooking(data);
       }
-
-      setBooking(data);
       setIsLoading(false);
     }
 

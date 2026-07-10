@@ -37,6 +37,33 @@ export default function HeroBooking() {
 
   const [routeInfo, setRouteInfo] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [acceptPrivacy, setAcceptPrivacy] = useState(false);
+  const [customerEmail, setCustomerEmail] = useState("");
+
+  useEffect(() => {
+    async function prefillProfile() {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          setCustomerEmail(session.user.email);
+          setCustomerName(session.user.user_metadata?.full_name || "");
+          const phone = session.user.user_metadata?.phone || "";
+          if (phone) {
+            const matchedPrefix = prefixes.find(p => phone.startsWith(p));
+            if (matchedPrefix) {
+              setPhonePrefix(matchedPrefix);
+              setPhoneNumber(phone.substring(matchedPrefix.length));
+            } else {
+              setPhoneNumber(phone);
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Error prefilling hero booking profile:", err);
+      }
+    }
+    prefillProfile();
+  }, []);
 
   const customerPhone = `${phonePrefix}${phoneNumber}`.trim();
 
@@ -96,7 +123,7 @@ export default function HeroBooking() {
 
   const canStep2 = date && time && passengers > 0;
 
-  const canConfirm = canStep1 && canStep2 && estimatedPrice && !isSaving;
+  const canConfirm = canStep1 && canStep2 && estimatedPrice && acceptPrivacy && !isSaving;
 
   const generateBookingId = () => {
     const d = new Date();
@@ -146,7 +173,7 @@ export default function HeroBooking() {
     setIsSaving(true);
     const bookingId = generateBookingId();
 
-    const { error } = await supabase.from("bookings").insert([
+    let { error } = await supabase.from("bookings").insert([
       {
         booking_id: bookingId,
         customer_name: customerName,
@@ -166,8 +193,37 @@ export default function HeroBooking() {
         travel_date: date,
         travel_time: time,
         status: "Pending",
+        customer_email: customerEmail || null,
       },
     ]);
+
+    // Fallback if customer_email column does not exist in db schema yet
+    if (error && (error.message.includes("customer_email") || error.code === "PGRST204" || error.details?.includes("customer_email"))) {
+      console.warn("customer_email column not found in schema. Retrying insert without it.");
+      const fallbackResult = await supabase.from("bookings").insert([
+        {
+          booking_id: bookingId,
+          customer_name: customerName,
+          customer_phone: customerPhone,
+          pickup,
+          dropoff,
+          pickup_details: babySeat ? `${pickupDetails} (Need Baby Car Seat)`.trim() : pickupDetails,
+          dropoff_details: dropoffDetails,
+          flight_number: flightNumber,
+          hotel_name: hotelName,
+          distance: routeInfo?.distanceKm || null,
+          duration: routeInfo?.durationText || null,
+          price: estimatedPrice,
+          total_price: estimatedPrice,
+          passengers,
+          luggage,
+          travel_date: date,
+          travel_time: time,
+          status: "Pending",
+        },
+      ]);
+      error = fallbackResult.error;
+    }
 
     setIsSaving(false);
 
@@ -391,6 +447,21 @@ export default function HeroBooking() {
                   <p className="text-[9px] text-slate-500 text-right max-w-[170px] leading-relaxed">
                     *Fixed price includes tolls, wait time and luggage. Free cancellation up to 24h prior to pickup.
                   </p>
+                </div>
+
+                {/* Privacy Disclaimer Checkbox */}
+                <div className="mt-4 flex items-start gap-3 rounded-xl border border-slate-800/35 bg-slate-950/15 p-3.5 shadow-sm">
+                  <input
+                    type="checkbox"
+                    id="privacy-hero"
+                    checked={acceptPrivacy}
+                    onChange={(e) => setAcceptPrivacy(e.target.checked)}
+                    className="w-4 h-4 accent-emerald-500 cursor-pointer rounded bg-slate-950/40 border-slate-850"
+                  />
+                  <label htmlFor="privacy-hero" className="text-[10px] text-slate-400 leading-relaxed cursor-pointer select-none">
+                    Pranoj Politikën e Privatësisë dhe jap pëlqimin tim për mbledhjen dhe ruajtjen e sigurt të të dhënave të mia për qëllim shërbimi.<br />
+                    <span className="text-slate-550">(I accept the Privacy Policy and consent to the secure collection & storage of my personal data for this transfer service.)</span>
+                  </label>
                 </div>
               </div>
             )}

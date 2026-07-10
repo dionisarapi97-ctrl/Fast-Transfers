@@ -23,6 +23,57 @@ export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [passwordInput, setPasswordInput] = useState("");
 
+  // Monthly stats & reset states
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  });
+  const [autoZeroFirstDays, setAutoZeroFirstDays] = useState(true);
+  const [activeModal, setActiveModal] = useState(null); // 'revenue' | 'drivers' | 'platform'
+  const [modalSearch, setModalSearch] = useState("");
+
+  // Albanian months lookup for select month dropdown
+  const formatMonthNameStr = (ym) => {
+    if (!ym) return "";
+    const [year, month] = ym.split("-");
+    const ALBANIAN_MONTHS = {
+      "01": "Janar", "02": "Shkurt", "03": "Mars", "04": "Prill",
+      "05": "Maj", "06": "Qershor", "07": "Korrik", "08": "Gusht",
+      "09": "Shtator", "10": "Tetor", "11": "Nëntor", "12": "Dhjetor"
+    };
+    return `${ALBANIAN_MONTHS[month] || month} ${year}`;
+  };
+
+  // Derive unique months from bookings data
+  const availableMonths = useMemo(() => {
+    const months = new Set();
+    const d = new Date();
+    const currentYM = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    months.add(currentYM);
+
+    bookings.forEach((b) => {
+      if (b.travel_date && b.travel_date.length >= 7) {
+        months.add(b.travel_date.substring(0, 7));
+      }
+    });
+
+    return Array.from(months).sort((a, b) => b.localeCompare(a));
+  }, [bookings]);
+
+  // Filter bookings for the selected month
+  const monthlyBookings = useMemo(() => {
+    return bookings.filter(b => b.travel_date && b.travel_date.startsWith(selectedMonth));
+  }, [bookings, selectedMonth]);
+
+  // Determine if stats should be forced to zero (days 1-3 of current month)
+  const isZeroPeriod = useMemo(() => {
+    if (!autoZeroFirstDays) return false;
+    const now = new Date();
+    const currentYM = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    if (selectedMonth !== currentYM) return false;
+    return now.getDate() <= 3;
+  }, [selectedMonth, autoZeroFirstDays]);
+
   useEffect(() => {
     const saved = sessionStorage.getItem("admin_auth");
     if (saved === "true") {
@@ -132,29 +183,44 @@ export default function AdminPage() {
   }, [bookings, search, statusFilter, driverFilter, dateFilter, customDate]);
 
   const stats = useMemo(() => {
-    const totalRevenue = bookings.reduce(
+    const totalBookingsCount = monthlyBookings.length;
+    const cancelledCount = monthlyBookings.filter(b => b.status === "Cancelled").length;
+    const activeCount = totalBookingsCount - cancelledCount;
+
+    const activeMonthlyBookings = monthlyBookings.filter(b => b.status !== "Cancelled");
+
+    let revenue = activeMonthlyBookings.reduce(
       (sum, b) => sum + Number(b.total_price || b.price || 0),
       0
     );
 
-    const driverTotal = bookings.reduce(
+    let driverTotal = activeMonthlyBookings.reduce(
       (sum, b) => sum + Number(b.driver_share || 0),
       0
     );
 
-    const companyTotal = bookings.reduce(
+    let companyTotal = activeMonthlyBookings.reduce(
       (sum, b) => sum + Number(b.company_share || 0),
       0
     );
 
+    // Apply zeroing out if we are in the zero-out period
+    if (isZeroPeriod) {
+      revenue = 0;
+      driverTotal = 0;
+      companyTotal = 0;
+    }
+
     return {
-      bookings: bookings.length,
-      revenue: totalRevenue,
+      bookings: totalBookingsCount,
+      active: activeCount,
+      cancelled: cancelledCount,
+      revenue,
       driverTotal,
       companyTotal,
-      pending: bookings.filter((b) => b.status === "Pending").length,
+      pending: bookings.filter((b) => b.status === "Pending").length, // Action Needed remains global
     };
-  }, [bookings]);
+  }, [bookings, monthlyBookings, isZeroPeriod]);
 
   async function updateBooking(id, values) {
     const { error } = await supabase
@@ -295,6 +361,10 @@ export default function AdminPage() {
   }
 
   function buildWhatsAppMessage(booking) {
+    const pickupMapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(booking.pickup || "")}`;
+    const dropoffMapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(booking.dropoff || "")}`;
+    const routeMapUrl = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(booking.pickup || "")}&destination=${encodeURIComponent(booking.dropoff || "")}&travelmode=driving`;
+
     return `🚖 *FAST TRANSFERS - BOOKING DETAILS*
 ----------------------------------------
 📌 *Booking ID:* ${booking.booking_id || "-"}
@@ -308,10 +378,14 @@ export default function AdminPage() {
 🏨 *Hotel/Accommodation:* ${booking.hotel_name || "None"}
 
 🟢 *Pickup Address:* ${booking.pickup || "-"}
+📍 *Pickup Map:* ${pickupMapUrl}
 📝 *Pickup Details:* ${booking.pickup_details || "None"}
 
 🔴 *Drop-off Address:* ${booking.dropoff || "-"}
+📍 *Drop-off Map:* ${dropoffMapUrl}
 📝 *Drop-off Details:* ${booking.dropoff_details || "None"}
+
+🗺️ *Navigation Route:* ${routeMapUrl}
 
 👥 *Passengers:* ${booking.passengers || "1"}
 🧳 *Luggage:* ${booking.luggage || "0"}
@@ -329,6 +403,248 @@ export default function AdminPage() {
 📝 *Admin Notes:* ${booking.admin_notes || "None"}
 ----------------------------------------`;
   }
+
+  // Report Export Helpers
+  const exportToCSV = (title, headers, rows) => {
+    let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
+    csvContent += headers.map(h => `"${h}"`).join(",") + "\n";
+    rows.forEach(r => {
+      csvContent += r.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(",") + "\n";
+    });
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `${title.toLowerCase().replace(/\s+/g, "_")}_${selectedMonth}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const exportToWord = (title, headers, rows) => {
+    const htmlContent = `
+      <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
+        <head>
+          <meta charset="utf-8">
+          <title>${title}</title>
+          <style>
+            body { font-family: 'Segoe UI', Arial, sans-serif; margin: 20px; }
+            h2 { color: #047857; text-align: center; }
+            .meta { text-align: center; font-size: 12px; color: #666; margin-bottom: 20px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+            th, td { border: 1px solid #d1d5db; padding: 10px; text-align: left; font-size: 11px; }
+            th { background-color: #f3f4f6; color: #1f2937; font-weight: bold; }
+            tr:nth-child(even) { background-color: #f9fafb; }
+            .total-row { font-weight: bold; background-color: #e5e7eb !important; }
+          </style>
+        </head>
+        <body>
+          <h2>${title}</h2>
+          <div class="meta">Muaji: ${formatMonthNameStr(selectedMonth)} | Gjeneruar më: ${new Date().toLocaleString()}</div>
+          <table>
+            <thead>
+              <tr>${headers.map(h => `<th>${h}</th>`).join("")}</tr>
+            </thead>
+            <tbody>
+              ${rows.map((r, i) => {
+                const isLast = i === rows.length - 1;
+                const className = isLast ? ' class="total-row"' : '';
+                return `<tr${className}>${r.map(c => `<td>${c}</td>`).join("")}</tr>`;
+              }).join("")}
+            </tbody>
+          </table>
+        </body>
+      </html>
+    `;
+    const blob = new Blob(['\ufeff' + htmlContent], { type: 'application/msword;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${title.toLowerCase().replace(/\s+/g, "_")}_${selectedMonth}.doc`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const exportToPDF = (title, headers, rows) => {
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) {
+      alert("Ju lutem lejoni pop-ups për të shkarkuar PDF.");
+      return;
+    }
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>${title}</title>
+          <style>
+            body { font-family: 'Segoe UI', Arial, sans-serif; margin: 30px; color: #1f2937; }
+            .header-container { display: flex; justify-content: space-between; align-items: center; border-b: 2px solid #047857; padding-bottom: 15px; margin-bottom: 20px; }
+            h1 { color: #047857; margin: 0; font-size: 24px; font-weight: 800; }
+            .meta { font-size: 12px; color: #4b5563; text-align: right; line-height: 1.5; }
+            table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+            th, td { border: 1px solid #e5e7eb; padding: 10px; text-align: left; font-size: 11px; }
+            th { background-color: #f3f4f6; color: #1f2937; font-weight: bold; }
+            tr:nth-child(even) { background-color: #f9fafb; }
+            .total-row { font-weight: bold; background-color: #f3f4f6 !important; border-top: 2px solid #1f2937; }
+            .footer { margin-top: 50px; font-size: 10px; color: #9ca3af; text-align: center; border-top: 1px solid #e5e7eb; padding-top: 10px; }
+            @media print {
+              body { margin: 20px; }
+              button { display: none; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header-container">
+            <div>
+              <h1>${title}</h1>
+              <div style="font-size: 13px; font-weight: 600; color: #4b5563; margin-top: 4px;">Fast Transfers</div>
+            </div>
+            <div class="meta">
+              <div><strong>Muaji:</strong> ${formatMonthNameStr(selectedMonth)}</div>
+              <div><strong>Gjeneruar më:</strong> ${new Date().toLocaleString()}</div>
+            </div>
+          </div>
+          <table>
+            <thead>
+              <tr>${headers.map(h => `<th>${h}</th>`).join("")}</tr>
+            </thead>
+            <tbody>
+              ${rows.map((r, i) => {
+                const isLast = i === rows.length - 1;
+                const className = isLast ? ' class="total-row"' : '';
+                return `<tr${className}>${r.map(c => `<td>${c}</td>`).join("")}</tr>`;
+              }).join("")}
+            </tbody>
+          </table>
+          <div class="footer">Raport i gjeneruar automatikisht nga paneli i administrimit Fast Transfers.</div>
+          <script>
+            window.onload = function() {
+              window.print();
+            }
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+
+  // Modal 1 Calculations - Gross Revenue
+  const modalFilteredRevenueBookings = useMemo(() => {
+    return monthlyBookings
+      .filter(b => b.status !== "Cancelled")
+      .filter(b => {
+        const text = `${b.booking_id} ${b.customer_name || ""} ${b.pickup} ${b.dropoff} ${b.driver_name || ""}`.toLowerCase();
+        return text.includes(modalSearch.toLowerCase());
+      });
+  }, [monthlyBookings, modalSearch]);
+
+  const revenueRows = useMemo(() => {
+    const list = modalFilteredRevenueBookings.map(b => [
+      b.travel_date,
+      b.booking_id,
+      b.customer_name || "-",
+      b.driver_name || "Unassigned",
+      `${b.pickup} ➔ ${b.dropoff}`,
+      b.status || "Pending",
+      `${b.total_price || b.price || 0} €`
+    ]);
+
+    const totalSum = modalFilteredRevenueBookings.reduce((sum, b) => sum + Number(b.total_price || b.price || 0), 0);
+    list.push(["TOTALI", `${modalFilteredRevenueBookings.length} booking(s)`, "", "", "", "", `${totalSum} €`]);
+    return list;
+  }, [modalFilteredRevenueBookings]);
+
+  // Modal 2 Calculations - Drivers Share
+  const driverSummaries = useMemo(() => {
+    const summaries = {};
+    drivers.forEach(d => {
+      summaries[d.id] = {
+        name: d.name,
+        phone: d.phone || "-",
+        email: d.email || "-",
+        bookingsCount: 0,
+        driverShare: 0,
+        companyShare: 0,
+        totalGross: 0,
+      };
+    });
+
+    monthlyBookings.forEach(b => {
+      if (b.status === "Cancelled") return;
+      if (b.driver_id) {
+        if (!summaries[b.driver_id]) {
+          summaries[b.driver_id] = {
+            name: b.driver_name || `Driver ID: ${b.driver_id}`,
+            phone: "-",
+            email: "-",
+            bookingsCount: 0,
+            driverShare: 0,
+            companyShare: 0,
+            totalGross: 0,
+          };
+        }
+        summaries[b.driver_id].bookingsCount += 1;
+        summaries[b.driver_id].driverShare += Number(b.driver_share || 0);
+        summaries[b.driver_id].companyShare += Number(b.company_share || 0);
+        summaries[b.driver_id].totalGross += Number(b.total_price || b.price || 0);
+      }
+    });
+
+    return Object.values(summaries).filter(ds => {
+      const text = `${ds.name} ${ds.phone} ${ds.email}`.toLowerCase();
+      return text.includes(modalSearch.toLowerCase());
+    });
+  }, [drivers, monthlyBookings, modalSearch]);
+
+  const driversShareRows = useMemo(() => {
+    const list = driverSummaries.map(ds => [
+      ds.name,
+      ds.phone,
+      ds.email,
+      ds.bookingsCount,
+      `${ds.driverShare} €`,
+      `${ds.companyShare} €`,
+      `${ds.totalGross} €`
+    ]);
+
+    const totalBookings = driverSummaries.reduce((sum, ds) => sum + ds.bookingsCount, 0);
+    const totalDriverShare = driverSummaries.reduce((sum, ds) => sum + ds.driverShare, 0);
+    const totalCompanyShare = driverSummaries.reduce((sum, ds) => sum + ds.companyShare, 0);
+    const totalGross = driverSummaries.reduce((sum, ds) => sum + ds.totalGross, 0);
+
+    list.push(["TOTALI", `${driverSummaries.length} shoferë`, "", totalBookings, `${totalDriverShare} €`, `${totalCompanyShare} €`, `${totalGross} €`]);
+    return list;
+  }, [driverSummaries]);
+
+  // Modal 3 Calculations - Platform Earnings
+  const modalFilteredPlatformBookings = useMemo(() => {
+    return monthlyBookings
+      .filter(b => b.status !== "Cancelled")
+      .filter(b => {
+        const text = `${b.booking_id} ${b.customer_name || ""} ${b.pickup} ${b.dropoff} ${b.driver_name || ""}`.toLowerCase();
+        return text.includes(modalSearch.toLowerCase());
+      });
+  }, [monthlyBookings, modalSearch]);
+
+  const platformEarningsRows = useMemo(() => {
+    const list = modalFilteredPlatformBookings.map(b => [
+      b.travel_date,
+      b.booking_id,
+      b.customer_name || "-",
+      b.driver_name || "Unassigned",
+      `${b.total_price || b.price || 0} €`,
+      `${b.driver_share || 0} €`,
+      `${b.company_share || 0} €`,
+      `Shoferi: ${b.driver_paid ? 'Kryer' : 'Pa kryer'} / FastT: ${b.company_paid ? 'Kryer' : 'Pa kryer'}`
+    ]);
+
+    const totalFare = modalFilteredPlatformBookings.reduce((sum, b) => sum + Number(b.total_price || b.price || 0), 0);
+    const totalDriver = modalFilteredPlatformBookings.reduce((sum, b) => sum + Number(b.driver_share || 0), 0);
+    const totalCompany = modalFilteredPlatformBookings.reduce((sum, b) => sum + Number(b.company_share || 0), 0);
+
+    list.push(["TOTALI", `${modalFilteredPlatformBookings.length} booking(s)`, "", "", `${totalFare} €`, `${totalDriver} €`, `${totalCompany} €`, ""]);
+    return list;
+  }, [modalFilteredPlatformBookings]);
 
   if (!isAuthenticated) {
     return (
@@ -366,9 +682,25 @@ export default function AdminPage() {
 
   return (
     <main className="min-h-screen bg-slate-50 px-6 py-10 text-slate-800 md:px-12 relative">
+      <style>{`
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes scaleIn {
+          from { opacity: 0; transform: scale(0.95); }
+          to { opacity: 1; transform: scale(1); }
+        }
+        .animate-fade-in {
+          animation: fadeIn 0.2s ease-out forwards;
+        }
+        .animate-scale-in {
+          animation: scaleIn 0.2s ease-out forwards;
+        }
+      `}</style>
 
       {/* Top Header Section */}
-      <div className="relative z-10 mb-10 flex flex-col justify-between gap-6 md:flex-row md:items-center border-b border-slate-200 pb-6">
+      <div className="relative z-10 mb-6 flex flex-col justify-between gap-6 md:flex-row md:items-center border-b border-slate-200 pb-6">
         <div>
           <div className="flex items-center gap-3">
             <p className="text-xs font-bold uppercase tracking-[0.25em] text-emerald-600">
@@ -395,13 +727,92 @@ export default function AdminPage() {
         </button>
       </div>
 
+      {/* Report Configuration & Month Selector Bar */}
+      <div className="relative z-10 mb-8 bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="space-y-1">
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Zgjidh Muajin (Select Month)</label>
+            <select
+              value={selectedMonth}
+              onChange={(e) => {
+                setSelectedMonth(e.target.value);
+                setModalSearch("");
+              }}
+              className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:bg-white focus:border-emerald-500/40 cursor-pointer transition"
+            >
+              {availableMonths.map((ym) => (
+                <option key={ym} value={ym}>
+                  {formatMonthNameStr(ym)}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex items-center gap-2 pt-4 md:pt-0">
+            <label className="flex items-center gap-2 text-xs font-bold text-slate-650 hover:text-slate-800 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={autoZeroFirstDays}
+                onChange={(e) => setAutoZeroFirstDays(e.target.checked)}
+                className="w-4 h-4 accent-emerald-600 rounded border-slate-200"
+              />
+              <span>Zero-zerohet në ditët 1-3 (Reset days 1-3)</span>
+            </label>
+            {isZeroPeriod && (
+              <span className="text-[10px] bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full font-bold animate-pulse">
+                Aktive (Zeroed Out)
+              </span>
+            )}
+          </div>
+        </div>
+
+        <div className="text-right">
+          <p className="text-[10px] font-bold text-slate-400 uppercase">Statusi i Mbylljes</p>
+          <p className="text-xs font-bold text-slate-700">
+            {isZeroPeriod ? "Në proces mbylljeje (0 €)" : `Aktiv: ${formatMonthNameStr(selectedMonth)}`}
+          </p>
+        </div>
+      </div>
+
       {/* Metrics Row */}
       <div className="relative z-10 mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        <Stat title="Total Bookings" value={stats.bookings} icon="📊" desc="All registered rides" />
-        <Stat title="Gross Revenue" value={`${stats.revenue} €`} icon="💶" desc="Sum of all transfers" />
-        <Stat title="Drivers share" value={`${stats.driverTotal} €`} icon="🚗" desc="Total payouts paid/due" />
-        <Stat title="Platform earnings" value={`${stats.companyTotal} €`} icon="🏢" desc="Net commission share" />
-        <Stat title="Action Needed" value={stats.pending} icon="⏳" desc="Pending assignments" highlight={stats.pending > 0} />
+        <Stat 
+          title="Total Bookings" 
+          value={stats.active} 
+          icon="📊" 
+          desc={`Active: ${stats.active} | Cancelled: ${stats.cancelled}`} 
+        />
+        <Stat 
+          title="Gross Revenue" 
+          value={`${stats.revenue} €`} 
+          icon="💶" 
+          desc="Sum of active transfers (Click)" 
+          onClick={() => { setActiveModal("revenue"); setModalSearch(""); }} 
+          isZeroed={isZeroPeriod} 
+        />
+        <Stat 
+          title="Drivers share" 
+          value={`${stats.driverTotal} €`} 
+          icon="🚗" 
+          desc="Driver payouts of active rides (Click)" 
+          onClick={() => { setActiveModal("drivers"); setModalSearch(""); }} 
+          isZeroed={isZeroPeriod} 
+        />
+        <Stat 
+          title="Platform earnings" 
+          value={`${stats.companyTotal} €`} 
+          icon="🏢" 
+          desc="Company commission of active rides (Click)" 
+          onClick={() => { setActiveModal("platform"); setModalSearch(""); }} 
+          isZeroed={isZeroPeriod} 
+        />
+        <Stat 
+          title="Action Needed" 
+          value={stats.pending} 
+          icon="⏳" 
+          desc="Pending assignments" 
+          highlight={stats.pending > 0} 
+        />
       </div>
 
       {/* Main Layout: Master-Detail Grid */}
@@ -757,24 +1168,273 @@ export default function AdminPage() {
         </div>
 
       </div>
+
+      {/* Detail Report Modals */}
+      {activeModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="w-full max-w-5xl bg-white rounded-3xl border border-slate-200 shadow-2xl p-6 md:p-8 flex flex-col max-h-[90vh] animate-scale-in">
+            
+            {/* Modal Header */}
+            <div className="flex items-start justify-between border-b border-slate-200 pb-4 mb-6">
+              <div>
+                <h3 className="text-xl font-black text-slate-900 leading-tight">
+                  {activeModal === "revenue" && `Detajet e Gross Revenue — ${formatMonthNameStr(selectedMonth)}`}
+                  {activeModal === "drivers" && `Detajet e Drivers Share — ${formatMonthNameStr(selectedMonth)}`}
+                  {activeModal === "platform" && `Detajet e Platform Earnings — ${formatMonthNameStr(selectedMonth)}`}
+                </h3>
+                <p className="text-xs text-slate-450 mt-1">
+                  Këtu po shihni analizën e plotë të të dhënave për muajin e zgjedhur.
+                  {isZeroPeriod && " (Shënim: Në dashboard këto vlera janë zeroed-out për mbylljen e muajit)"}
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  setActiveModal(null);
+                  setModalSearch("");
+                }}
+                className="text-2xl text-slate-450 hover:text-slate-900 leading-none p-1 cursor-pointer transition"
+              >
+                &times;
+              </button>
+            </div>
+
+            {/* Modal Actions & Search Bar */}
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
+              <div className="relative flex-1 max-w-md">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs">🔍</span>
+                <input
+                  value={modalSearch}
+                  onChange={(e) => setModalSearch(e.target.value)}
+                  placeholder={
+                    activeModal === "drivers" 
+                      ? "Kërko shofer..." 
+                      : "Kërko Client, Booking ID, Shofer..."
+                  }
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 pl-8 pr-4 py-2 text-xs text-slate-800 outline-none placeholder:text-slate-450 focus:bg-white focus:border-emerald-500/40 transition"
+                />
+              </div>
+
+              {/* Export Buttons */}
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  onClick={() => {
+                    if (activeModal === "revenue") exportToPDF(`Raporti i Gross Revenue`, ["Data", "Booking ID", "Klienti", "Shoferi", "Rruga", "Statusi", "Pagesa"], revenueRows);
+                    if (activeModal === "drivers") exportToPDF(`Raporti i Drivers Share`, ["Shoferi", "Telefon", "Email", "Total Bookings", "Driver Share", "Company Share", "Total Gross"], driversShareRows);
+                    if (activeModal === "platform") exportToPDF(`Raporti i Platform Earnings`, ["Data", "Booking ID", "Klienti", "Shoferi", "Total Fare", "Driver Share", "Platform Share", "Statusi"], platformEarningsRows);
+                  }}
+                  className="rounded-xl border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 font-bold px-4 py-2 text-xs transition cursor-pointer flex items-center gap-1.5"
+                >
+                  📄 PDF
+                </button>
+                <button
+                  onClick={() => {
+                    if (activeModal === "revenue") exportToWord(`Raporti i Gross Revenue`, ["Data", "Booking ID", "Klienti", "Shoferi", "Rruga", "Statusi", "Pagesa"], revenueRows);
+                    if (activeModal === "drivers") exportToWord(`Raporti i Drivers Share`, ["Shoferi", "Telefon", "Email", "Total Bookings", "Driver Share", "Company Share", "Total Gross"], driversShareRows);
+                    if (activeModal === "platform") exportToWord(`Raporti i Platform Earnings`, ["Data", "Booking ID", "Klienti", "Shoferi", "Total Fare", "Driver Share", "Platform Share", "Statusi"], platformEarningsRows);
+                  }}
+                  className="rounded-xl border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 font-bold px-4 py-2 text-xs transition cursor-pointer flex items-center gap-1.5"
+                >
+                  📝 Word
+                </button>
+                <button
+                  onClick={() => {
+                    if (activeModal === "revenue") exportToCSV(`Raporti i Gross Revenue`, ["Data", "Booking ID", "Klienti", "Shoferi", "Rruga", "Statusi", "Pagesa"], revenueRows);
+                    if (activeModal === "drivers") exportToCSV(`Raporti i Drivers Share`, ["Shoferi", "Telefon", "Email", "Total Bookings", "Driver Share", "Company Share", "Total Gross"], driversShareRows);
+                    if (activeModal === "platform") exportToCSV(`Raporti i Platform Earnings`, ["Data", "Booking ID", "Klienti", "Shoferi", "Total Fare", "Driver Share", "Platform Share", "Statusi"], platformEarningsRows);
+                  }}
+                  className="rounded-xl border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 font-bold px-4 py-2 text-xs transition cursor-pointer flex items-center gap-1.5"
+                >
+                  📊 Excel (CSV)
+                </button>
+              </div>
+            </div>
+
+            {/* Table Container */}
+            <div className="flex-1 overflow-auto rounded-2xl border border-slate-200/60 custom-scrollbar shadow-inner bg-slate-50/50">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead className="sticky top-0 bg-slate-100 border-b border-slate-200 text-slate-700 font-bold z-10">
+                  {activeModal === "revenue" && (
+                    <tr>
+                      <th className="p-3.5">Data</th>
+                      <th className="p-3.5">Booking ID</th>
+                      <th className="p-3.5">Klienti</th>
+                      <th className="p-3.5">Shoferi</th>
+                      <th className="p-3.5">Rruga</th>
+                      <th className="p-3.5">Statusi</th>
+                      <th className="p-3.5 text-right">Pagesa</th>
+                    </tr>
+                  )}
+                  {activeModal === "drivers" && (
+                    <tr>
+                      <th className="p-3.5">Shoferi</th>
+                      <th className="p-3.5">Telefon</th>
+                      <th className="p-3.5">Email</th>
+                      <th className="p-3.5 text-center">Total Bookings</th>
+                      <th className="p-3.5 text-right">Driver Share (€)</th>
+                      <th className="p-3.5 text-right">Company Share (€)</th>
+                      <th className="p-3.5 text-right">Total Gross (€)</th>
+                    </tr>
+                  )}
+                  {activeModal === "platform" && (
+                    <tr>
+                      <th className="p-3.5">Data</th>
+                      <th className="p-3.5">Booking ID</th>
+                      <th className="p-3.5">Klienti</th>
+                      <th className="p-3.5">Shoferi</th>
+                      <th className="p-3.5 text-right">Total Fare (€)</th>
+                      <th className="p-3.5 text-right">Driver Share (€)</th>
+                      <th className="p-3.5 text-right">Platform Share (€)</th>
+                      <th className="p-3.5 text-center">Statusi i Pagesave</th>
+                    </tr>
+                  )}
+                </thead>
+                <tbody className="divide-y divide-slate-150 bg-white">
+                  {/* Data Rows */}
+                  {activeModal === "revenue" && revenueRows.slice(0, -1).map((row, idx) => (
+                    <tr key={idx} className="hover:bg-slate-50/60 transition">
+                      <td className="p-3.5 font-medium text-slate-500 whitespace-nowrap">{row[0]}</td>
+                      <td className="p-3.5"><span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-100 rounded-full px-2 py-0.5">{row[1]}</span></td>
+                      <td className="p-3.5 font-bold text-slate-800">{row[2]}</td>
+                      <td className="p-3.5 text-slate-600 font-semibold">{row[3]}</td>
+                      <td className="p-3.5 text-slate-500 max-w-[200px] truncate" title={row[4]}>{row[4]}</td>
+                      <td className="p-3.5"><span className={`rounded-full border px-2 py-0.5 text-[9px] font-bold ${statusClass(row[5])}`}>{row[5]}</span></td>
+                      <td className="p-3.5 text-right font-black text-slate-800">{row[6]}</td>
+                    </tr>
+                  ))}
+
+                  {activeModal === "drivers" && driversShareRows.slice(0, -1).map((row, idx) => (
+                    <tr key={idx} className="hover:bg-slate-50/60 transition">
+                      <td className="p-3.5 font-bold text-slate-800">{row[0]}</td>
+                      <td className="p-3.5 font-semibold text-slate-600">{row[1]}</td>
+                      <td className="p-3.5 font-semibold text-slate-600">{row[2]}</td>
+                      <td className="p-3.5 text-center font-bold text-slate-700">{row[3]}</td>
+                      <td className="p-3.5 text-right font-black text-emerald-600">{row[4]}</td>
+                      <td className="p-3.5 text-right font-black text-slate-800">{row[5]}</td>
+                      <td className="p-3.5 text-right font-black text-slate-900 bg-slate-50">{row[6]}</td>
+                    </tr>
+                  ))}
+
+                  {activeModal === "platform" && platformEarningsRows.slice(0, -1).map((row, idx) => (
+                    <tr key={idx} className="hover:bg-slate-50/60 transition">
+                      <td className="p-3.5 font-medium text-slate-500 whitespace-nowrap">{row[0]}</td>
+                      <td className="p-3.5"><span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-100 rounded-full px-2 py-0.5">{row[1]}</span></td>
+                      <td className="p-3.5 font-bold text-slate-800">{row[2]}</td>
+                      <td className="p-3.5 text-slate-600 font-semibold">{row[3]}</td>
+                      <td className="p-3.5 text-right font-black text-slate-850">{row[4]}</td>
+                      <td className="p-3.5 text-right font-black text-slate-600">{row[5]}</td>
+                      <td className="p-3.5 text-right font-black text-emerald-600">{row[6]}</td>
+                      <td className="p-3.5 text-center text-[10px] font-bold text-slate-500">{row[7]}</td>
+                    </tr>
+                  ))}
+
+                  {/* Summary / Total Row */}
+                  {activeModal === "revenue" && revenueRows.length > 1 && (
+                    <tr className="bg-slate-100 border-t-2 border-slate-300 font-bold z-10 sticky bottom-0 text-slate-800">
+                      <td className="p-3.5">{revenueRows[revenueRows.length - 1][0]}</td>
+                      <td className="p-3.5">{revenueRows[revenueRows.length - 1][1]}</td>
+                      <td className="p-3.5"></td>
+                      <td className="p-3.5"></td>
+                      <td className="p-3.5"></td>
+                      <td className="p-3.5"></td>
+                      <td className="p-3.5 text-right text-base text-slate-900 font-black">{revenueRows[revenueRows.length - 1][6]}</td>
+                    </tr>
+                  )}
+
+                  {activeModal === "drivers" && driversShareRows.length > 1 && (
+                    <tr className="bg-slate-100 border-t-2 border-slate-300 font-bold z-10 sticky bottom-0 text-slate-800">
+                      <td className="p-3.5">{driversShareRows[driversShareRows.length - 1][0]}</td>
+                      <td className="p-3.5">{driversShareRows[driversShareRows.length - 1][1]}</td>
+                      <td className="p-3.5">{driversShareRows[driversShareRows.length - 1][2]}</td>
+                      <td className="p-3.5 text-center text-sm font-black">{driversShareRows[driversShareRows.length - 1][3]}</td>
+                      <td className="p-3.5 text-right text-sm text-emerald-600 font-black">{driversShareRows[driversShareRows.length - 1][4]}</td>
+                      <td className="p-3.5 text-right text-sm font-black">{driversShareRows[driversShareRows.length - 1][5]}</td>
+                      <td className="p-3.5 text-right text-base text-slate-900 font-black bg-slate-150">{driversShareRows[driversShareRows.length - 1][6]}</td>
+                    </tr>
+                  )}
+
+                  {activeModal === "platform" && platformEarningsRows.length > 1 && (
+                    <tr className="bg-slate-100 border-t-2 border-slate-300 font-bold z-10 sticky bottom-0 text-slate-800">
+                      <td className="p-3.5">{platformEarningsRows[platformEarningsRows.length - 1][0]}</td>
+                      <td className="p-3.5">{platformEarningsRows[platformEarningsRows.length - 1][1]}</td>
+                      <td className="p-3.5"></td>
+                      <td className="p-3.5"></td>
+                      <td className="p-3.5 text-right text-sm font-black">{platformEarningsRows[platformEarningsRows.length - 1][4]}</td>
+                      <td className="p-3.5 text-right text-sm font-black">{platformEarningsRows[platformEarningsRows.length - 1][5]}</td>
+                      <td className="p-3.5 text-right text-base text-emerald-600 font-black">{platformEarningsRows[platformEarningsRows.length - 1][6]}</td>
+                      <td className="p-3.5"></td>
+                    </tr>
+                  )}
+
+                  {/* Empty state for modal */}
+                  {((activeModal === "revenue" && revenueRows.length <= 1) ||
+                    (activeModal === "drivers" && driversShareRows.length <= 1) ||
+                    (activeModal === "platform" && platformEarningsRows.length <= 1)) && (
+                    <tr>
+                      <td colSpan={10} className="p-10 text-center text-slate-400 font-medium">
+                        Nuk u gjetën të dhëna për këtë kërkim.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex justify-end gap-3 mt-6 border-t border-slate-150 pt-4">
+              <button
+                onClick={() => {
+                  setActiveModal(null);
+                  setModalSearch("");
+                }}
+                className="rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold px-6 py-2.5 text-xs transition cursor-pointer"
+              >
+                Mbyll
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
     </main>
   );
 }
 
-function Stat({ title, value, icon, desc, highlight = false }) {
+function Stat({ title, value, icon, desc, highlight = false, onClick = null, isZeroed = false }) {
   return (
-    <div className={`rounded-2xl border bg-white p-5 hover:shadow-md transition duration-300 ${highlight ? 'border-emerald-500/40 shadow-[0_0_20px_rgba(16,185,129,0.05)] bg-emerald-50/10' : 'border-slate-200/80 shadow-sm'
-      }`}>
+    <div 
+      onClick={onClick}
+      className={`rounded-2xl border bg-white p-5 hover:shadow-md transition duration-300 relative ${
+        onClick ? 'cursor-pointer hover:border-emerald-500/40 hover:bg-emerald-50/5' : ''
+      } ${
+        highlight 
+          ? 'border-emerald-500/40 shadow-[0_0_20px_rgba(16,185,129,0.05)] bg-emerald-50/10' 
+          : 'border-slate-200/80 shadow-sm'
+      }`}
+    >
       <div className="flex justify-between items-start">
         <div className="space-y-1">
           <p className="text-[11px] text-slate-400 uppercase tracking-wider font-semibold">{title}</p>
-          <p className="text-2xl font-black text-slate-800 tracking-tight">{value}</p>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <p className="text-2xl font-black text-slate-800 tracking-tight">{value}</p>
+            {isZeroed && (
+              <span className="text-[8px] bg-amber-50 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded font-bold animate-pulse select-none">
+                Zeroed
+              </span>
+            )}
+          </div>
         </div>
         <div className="flex items-center justify-center w-8 h-8 rounded-xl bg-slate-50 border border-slate-100 text-lg">
           {icon}
         </div>
       </div>
-      <p className="text-[10px] text-slate-400 mt-3">{desc}</p>
+      <div className="flex justify-between items-center mt-3">
+        <p className="text-[10px] text-slate-400">{desc}</p>
+        {onClick && (
+          <span className="text-[9px] text-emerald-600 font-bold hover:underline select-none">
+            Detaje ➔
+          </span>
+        )}
+      </div>
     </div>
   );
 }

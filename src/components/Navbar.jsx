@@ -1,6 +1,50 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabaseClient";
+
 export default function Navbar() {
+  const [session, setSession] = useState(null);
+  const [rolePath, setRolePath] = useState("/client/dashboard");
+
+  useEffect(() => {
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+      setSession(currentSession);
+      if (currentSession?.user) {
+        checkDriverRole(currentSession.user.email);
+      }
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      setSession(newSession);
+      if (newSession?.user) {
+        checkDriverRole(newSession.user.email);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const checkDriverRole = async (email) => {
+    try {
+      const { data: driver } = await supabase
+        .from("drivers")
+        .select("id")
+        .eq("email", email)
+        .maybeSingle();
+
+      if (driver) {
+        setRolePath("/driver/dashboard");
+      } else {
+        setRolePath("/client/dashboard");
+      }
+    } catch (err) {
+      setRolePath("/client/dashboard");
+    }
+  };
+
   const handleScrollTo = (id) => {
     const el = document.getElementById(id);
     if (el) {
@@ -48,6 +92,23 @@ export default function Navbar() {
         >
           FAQ
         </button>
+
+        {session ? (
+          <a
+            href={rolePath}
+            className="hover:text-slate-100 text-[#00D084] font-bold transition duration-200 cursor-pointer"
+          >
+            My Account
+          </a>
+        ) : (
+          <a
+            href="/login"
+            className="hover:text-slate-100 transition duration-200 cursor-pointer"
+          >
+            Log In
+          </a>
+        )}
+
         <a
           href="tel:+355693048000"
           className="text-emerald-500 hover:text-emerald-400 transition duration-200 flex items-center gap-1.5"
@@ -56,12 +117,30 @@ export default function Navbar() {
         </a>
       </div>
 
-      <button
-        onClick={handleBookNow}
-        className="rounded-full bg-emerald-600 px-6 py-2.5 text-xs font-bold text-white transition-all duration-300 hover:scale-105 hover:bg-emerald-500 hover:shadow-[0_0_20px_rgba(16,185,129,0.3)] active:scale-95 cursor-pointer"
-      >
-        Book Now
-      </button>
+      <div className="flex items-center gap-4">
+        {session ? (
+          <a
+            href={rolePath}
+            className="md:hidden text-xs font-extrabold text-[#00D084] hover:underline transition"
+          >
+            Profile
+          </a>
+        ) : (
+          <a
+            href="/login"
+            className="md:hidden text-xs font-extrabold text-slate-300 hover:text-white transition"
+          >
+            Log In
+          </a>
+        )}
+
+        <button
+          onClick={handleBookNow}
+          className="rounded-full bg-emerald-600 px-6 py-2.5 text-xs font-bold text-white transition-all duration-300 hover:scale-105 hover:bg-emerald-500 hover:shadow-[0_0_20px_rgba(16,185,129,0.3)] active:scale-95 cursor-pointer"
+        >
+          Book Now
+        </button>
+      </div>
     </nav>
   );
 }

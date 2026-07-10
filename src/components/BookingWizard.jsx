@@ -36,6 +36,33 @@ export default function BookingWizard() {
 
   const [routeInfo, setRouteInfo] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [acceptPrivacy, setAcceptPrivacy] = useState(false);
+  const [customerEmail, setCustomerEmail] = useState("");
+
+  useEffect(() => {
+    async function prefillProfile() {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          setCustomerEmail(session.user.email);
+          setCustomerName(session.user.user_metadata?.full_name || "");
+          const phone = session.user.user_metadata?.phone || "";
+          if (phone) {
+            const matchedPrefix = prefixes.find(p => phone.startsWith(p));
+            if (matchedPrefix) {
+              setPhonePrefix(matchedPrefix);
+              setPhoneNumber(phone.substring(matchedPrefix.length));
+            } else {
+              setPhoneNumber(phone);
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Error prefilling booking wizard profile:", err);
+      }
+    }
+    prefillProfile();
+  }, []);
 
   const customerPhone = `${phonePrefix}${phoneNumber}`.trim();
 
@@ -75,7 +102,7 @@ export default function BookingWizard() {
 
   const canStep2 = date && time && passengers > 0;
 
-  const canConfirm = canStep1 && canStep2 && estimatedPrice && !isSaving;
+  const canConfirm = canStep1 && canStep2 && estimatedPrice && acceptPrivacy && !isSaving;
 
   const generateBookingId = () => {
     const d = new Date();
@@ -126,7 +153,7 @@ export default function BookingWizard() {
 
     const bookingId = generateBookingId();
 
-    const { error } = await supabase.from("bookings").insert([
+    let { error } = await supabase.from("bookings").insert([
       {
         booking_id: bookingId,
         customer_name: customerName,
@@ -146,8 +173,37 @@ export default function BookingWizard() {
         travel_date: date,
         travel_time: time,
         status: "Pending",
+        customer_email: customerEmail || null,
       },
     ]);
+
+    // Fallback if customer_email column does not exist in db schema yet
+    if (error && (error.message.includes("customer_email") || error.code === "PGRST204" || error.details?.includes("customer_email"))) {
+      console.warn("customer_email column not found in schema. Retrying insert without it.");
+      const fallbackResult = await supabase.from("bookings").insert([
+        {
+          booking_id: bookingId,
+          customer_name: customerName,
+          customer_phone: customerPhone,
+          pickup,
+          dropoff,
+          pickup_details: pickupDetails,
+          dropoff_details: dropoffDetails,
+          flight_number: flightNumber,
+          hotel_name: hotelName,
+          distance: routeInfo?.distanceKm || null,
+          duration: routeInfo?.durationText || null,
+          price: estimatedPrice,
+          total_price: estimatedPrice,
+          passengers,
+          luggage,
+          travel_date: date,
+          travel_time: time,
+          status: "Pending",
+        },
+      ]);
+      error = fallbackResult.error;
+    }
 
     setIsSaving(false);
 
@@ -293,6 +349,21 @@ export default function BookingWizard() {
             <p className="mt-1 text-3xl font-black text-[#00D084]">
               {estimatedPrice ? `${estimatedPrice} €` : "Add route"}
             </p>
+          </div>
+
+          {/* Privacy Disclaimer Checkbox */}
+          <div className="mt-6 flex items-start gap-3 rounded-2xl border border-white/10 bg-white/5 p-4.5">
+            <input
+              type="checkbox"
+              id="privacy-wizard"
+              checked={acceptPrivacy}
+              onChange={(e) => setAcceptPrivacy(e.target.checked)}
+              className="mt-1 h-4 w-4 cursor-pointer rounded border-white/15 bg-slate-900 text-[#00D084] focus:ring-[#00D084] focus:ring-offset-0 focus:outline-none"
+            />
+            <label htmlFor="privacy-wizard" className="text-xs text-white/75 leading-relaxed cursor-pointer select-none">
+              Pranoj Politikën e Privatësisë dhe jap pëlqimin tim për mbledhjen dhe ruajtjen e sigurt të të dhënave të mia për qëllim shërbimi.<br />
+              <span className="text-white/45">(I accept the Privacy Policy and consent to the secure collection & storage of my personal data for this transfer service.)</span>
+            </label>
           </div>
         </div>
       )}
