@@ -131,7 +131,20 @@ export const translations = {
     new_client_prompt: "Klient i ri? Regjistrohu këtu",
     existing_client_prompt: "Keni llogari? Hyni këtu",
     driver_notice: "*Llogaritë e shoferëve krijohen vetëm nga administratori.",
-    placeholder_full_name: "p.sh. Dionis Arapi"
+    placeholder_full_name: "p.sh. Dionis Arapi",
+
+    // Client Dashboard
+    client_dashboard_title: "Paneli i Klientit",
+    loyal_client: "Klient Besnik",
+    welcome_client: "Mirësevini, {name}!",
+    book_new_transfer: "Rezervo Transfertë të Re",
+    logout: "Dil",
+    upcoming_trips: "Udhëtimet e Ardhshme",
+    trip_history: "Historiku i Udhëtimeve",
+    no_upcoming_trips: "Nuk keni asnjë udhëtim të planifikuar.",
+    no_past_trips: "Asnjë udhëtim i shkuar.",
+    assigned_driver: "Shoferi i caktuar",
+    loading_profile: "Duke ngarkuar profilin..."
   },
   en: {
     destinations: "Destinations",
@@ -248,7 +261,20 @@ export const translations = {
     new_client_prompt: "New client? Sign Up here",
     existing_client_prompt: "Already have an account? Sign In here",
     driver_notice: "*Driver accounts are created only by the administrator.",
-    placeholder_full_name: "e.g. John Doe"
+    placeholder_full_name: "e.g. John Doe",
+
+    // Client Dashboard
+    client_dashboard_title: "Client Dashboard",
+    loyal_client: "Loyal Client",
+    welcome_client: "Welcome, {name}!",
+    book_new_transfer: "Book New Transfer",
+    logout: "Logout",
+    upcoming_trips: "Upcoming Trips",
+    trip_history: "Trip History",
+    no_upcoming_trips: "You have no scheduled trips.",
+    no_past_trips: "No past trips.",
+    assigned_driver: "Assigned Driver",
+    loading_profile: "Loading profile..."
   },
   it: {
     destinations: "Destinazioni",
@@ -365,7 +391,20 @@ export const translations = {
     new_client_prompt: "Nuovo cliente? Registrati qui",
     existing_client_prompt: "Hai già un account? Accedi qui",
     driver_notice: "*Gli account autista vengono creati solo dall'amministratore.",
-    placeholder_full_name: "es. Mario Rossi"
+    placeholder_full_name: "es. Mario Rossi",
+
+    // Client Dashboard
+    client_dashboard_title: "Dashboard Cliente",
+    loyal_client: "Cliente Fedele",
+    welcome_client: "Benvenuto, {name}!",
+    book_new_transfer: "Prenota Nuovo Trasferimento",
+    logout: "Disconnetti",
+    upcoming_trips: "Viaggi Futuri",
+    trip_history: "Cronologia Viaggi",
+    no_upcoming_trips: "Non hai viaggi pianificati.",
+    no_past_trips: "Nessun viaggio passato.",
+    assigned_driver: "Autista Assegnato",
+    loading_profile: "Caricamento profilo..."
   },
   de: {
     destinations: "Reiseziele",
@@ -482,7 +521,20 @@ export const translations = {
     new_client_prompt: "Neuer Kunde? Hier registrieren",
     existing_client_prompt: "Haben Sie bereits ein Konto? Hier anmelden",
     driver_notice: "*Fahrerkonten werden nur vom Administrator erstellt.",
-    placeholder_full_name: "z.B. Max Mustermann"
+    placeholder_full_name: "z.B. Max Mustermann",
+
+    // Client Dashboard
+    client_dashboard_title: "Kunden-Dashboard",
+    loyal_client: "Treuer Kunde",
+    welcome_client: "Willkommen, {name}!",
+    book_new_transfer: "Neuen Transfer buchen",
+    logout: "Abmelden",
+    upcoming_trips: "Anstehende Fahrten",
+    trip_history: "Fahrtverlauf",
+    no_upcoming_trips: "Sie haben keine geplanten Fahrten.",
+    no_past_trips: "Keine vergangenen Fahrten.",
+    assigned_driver: "Zugewiesener Fahrer",
+    loading_profile: "Profil wird geladen..."
   },
   fr: {
     destinations: "Destinations",
@@ -548,12 +600,12 @@ export const translations = {
     loading_booking: "Chargement de la réservation...",
     why_title: "Pourquoi choisir Fast Transfers?",
     why_sub: "Confort premium, sécurité maximale et respect de l'environnement.",
-    why_feat1_title: "Flotte 100 % électrique",
+    why_feat1_title: "Flotte 100% électrique",
     why_feat1_desc: "Voyagez à bord de nos véhicules électriques modernes pour un confort absolu et sans impact.",
     why_feat2_title: "Tarifs Fixes & Transparents",
     why_feat2_desc: "Aucun frais caché. Le prix calculé est exactement ce que vous paierez.",
     why_feat3_title: "Disponibilité 24/7",
-    why_feat3_desc: "Nous sommes disponibles 24h/24, 7j/7, quelle que soit l'heure d'arrivée de votre vol.",
+    why_feat3_desc: "We are available 24 hours a day, 7 days a week, regardless of your flight arrival time.",
     why_feat4_title: "Suivi de Vol en Direct",
     why_feat4_desc: "Nous suivons votre vol en temps réel. En cas de retard, nous vous attendons gratuitement.",
     why_feat5_title: "Chauffeurs Professionnels",
@@ -599,7 +651,20 @@ export const translations = {
     new_client_prompt: "Nouveau client? Inscrivez-vous ici",
     existing_client_prompt: "Vous avez déjà un compte? Connectez-vous ici",
     driver_notice: "*Les comptes chauffeurs sont créés uniquement par l'administrateur.",
-    placeholder_full_name: "ex. Jean Dupont"
+    placeholder_full_name: "ex. Jean Dupont",
+
+    // Client Dashboard
+    client_dashboard_title: "Tableau de Bord Client",
+    loyal_client: "Client Fidèle",
+    welcome_client: "Bienvenue, {name}!",
+    book_new_transfer: "Réserver un nouveau transfert",
+    logout: "Se déconnecter",
+    upcoming_trips: "Voyages à venir",
+    trip_history: "Historique des Voyages",
+    no_upcoming_trips: "Vous n'avez aucun voyage prévu.",
+    no_past_trips: "Aucun voyage passé.",
+    assigned_driver: "Chauffeur Assigné",
+    loading_profile: "Chargement du profil..."
   },
   es: {
     destinations: "Destinos",
@@ -681,7 +746,7 @@ export const translations = {
     dest_sub: "Precios Fijos, Sin Cargos Ocultos",
     dest_desc: "Elija una de nuestras rutas de traslados populares con tarifas fijas y transparentes.",
     fixed_from_tia: "Fijo desde TIA",
-    direct_private_desc: "Traslado privado directo en un vehículo eléctrico de gama alta.",
+    direct_private_desc: "Traslado privado directo en un vehículo electrónico de gama alta.",
     distance_price: "Distancia & Precio",
     child_seat_option: "Opción Silla de Niño",
     book_this_route: "Reservar esta ruta",
@@ -716,6 +781,19 @@ export const translations = {
     new_client_prompt: "¿Nuevo cliente? Regístrese aquí",
     existing_client_prompt: "¿Ya tiene una cuenta? Inicie sesión aquí",
     driver_notice: "*Las cuentas de conductor solo son creadas por el administrador.",
-    placeholder_full_name: "ej. Juan Pérez"
+    placeholder_full_name: "ej. Juan Pérez",
+
+    // Client Dashboard
+    client_dashboard_title: "Panel de Control de Cliente",
+    loyal_client: "Cliente Leal",
+    welcome_client: "¡Bienvenido, {name}!",
+    book_new_transfer: "Reservar Nuevo Traslado",
+    logout: "Cerrar Sesión",
+    upcoming_trips: "Próximos Viajes",
+    trip_history: "Historial de Viajes",
+    no_upcoming_trips: "No tiene viajes programados.",
+    no_past_trips: "Sin viajes anteriores.",
+    assigned_driver: "Conductor Asignado",
+    loading_profile: "Cargando perfil..."
   }
 };

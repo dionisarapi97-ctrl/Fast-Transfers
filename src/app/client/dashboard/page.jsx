@@ -1,14 +1,27 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
+import { useLanguage } from "@/context/LanguageContext";
+
+const languages = [
+  { code: "sq", label: "Shqip", flag: "🇦🇱" },
+  { code: "en", label: "English", flag: "🇬🇧" },
+  { code: "it", label: "Italiano", flag: "🇮🇹" },
+  { code: "de", label: "Deutsch", flag: "🇩🇪" },
+  { code: "fr", label: "Français", flag: "🇫🇷" },
+  { code: "es", label: "Español", flag: "🇪🇸" },
+];
 
 export default function ClientDashboard() {
   const router = useRouter();
+  const { t, language, setLanguage } = useLanguage();
   const [profile, setProfile] = useState(null);
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [langOpen, setLangOpen] = useState(false);
+  const dropdownRef = useRef(null);
 
   useEffect(() => {
     async function loadClientData() {
@@ -22,7 +35,7 @@ export default function ClientDashboard() {
 
       setProfile({
         email: session.user.email,
-        name: session.user.user_metadata?.full_name || "Klient Besnik",
+        name: session.user.user_metadata?.full_name || (language === "sq" ? "Klient Besnik" : "Loyal Client"),
         phone: session.user.user_metadata?.phone || "-",
       });
 
@@ -44,7 +57,16 @@ export default function ClientDashboard() {
     }
 
     loadClientData();
-  }, [router]);
+
+    // Click outside dropdown handler
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setLangOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [router, language]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -56,7 +78,7 @@ export default function ClientDashboard() {
       <main className="min-h-screen bg-[#07110f] text-white flex items-center justify-center">
         <div className="text-center space-y-3">
           <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#00D084] mx-auto"></div>
-          <p className="text-xs text-slate-455 uppercase font-bold tracking-widest mt-4">Duke ngarkuar profilin...</p>
+          <p className="text-xs text-slate-455 uppercase font-bold tracking-widest mt-4">{t("loading_profile")}</p>
         </div>
       </main>
     );
@@ -74,19 +96,55 @@ export default function ClientDashboard() {
     return b.travel_date < nowStr;
   });
 
+  const currentLang = languages.find((l) => l.code === language) || languages[0];
+
   return (
-    <main className="min-h-screen bg-[#07110f] text-white px-6 py-28 md:px-12">
+    <main className="min-h-screen bg-[#07110f] text-white px-6 py-28 md:px-12 relative">
       
+      {/* Floating Language Switcher Top-Right */}
+      <div className="absolute top-6 right-6" ref={dropdownRef}>
+        <button
+          onClick={() => setLangOpen(!langOpen)}
+          className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 hover:bg-white/10 px-3.5 py-2 text-xs font-bold text-white transition duration-200 cursor-pointer"
+        >
+          <span>{currentLang.flag}</span>
+          <span className="uppercase text-[10px] tracking-wide">{currentLang.code}</span>
+          <span className="text-[8px] opacity-60">▼</span>
+        </button>
+        
+        {langOpen && (
+          <div className="absolute right-0 mt-2 w-36 rounded-2xl border border-white/15 bg-slate-950 p-1.5 shadow-2xl z-50 space-y-0.5">
+            {languages.map((l) => (
+              <button
+                key={l.code}
+                onClick={() => {
+                  setLanguage(l.code);
+                  setLangOpen(false);
+                }}
+                className={`w-full flex items-center gap-2.5 rounded-xl px-3 py-2 text-left text-xs font-bold transition hover:bg-white/10 cursor-pointer ${
+                  language === l.code ? "text-[#00D084] bg-white/5" : "text-slate-355"
+                }`}
+              >
+                <span className="text-sm">{l.flag}</span>
+                <span>{l.label}</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
       {/* Header Bar */}
       <div className="max-w-6xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-white/10 pb-8 mb-10">
         <div className="space-y-2">
           <div className="flex items-center gap-3">
-            <span className="text-xs font-bold uppercase tracking-[0.2em] text-[#00D084]">Client Dashboard</span>
+            <span className="text-xs font-bold uppercase tracking-[0.2em] text-[#00D084]">{t("client_dashboard_title")}</span>
             <span className="text-[10px] text-emerald-450 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 rounded-full font-bold">
-              Klient Besnik (Loyal Client)
+              {t("loyal_client")}
             </span>
           </div>
-          <h1 className="text-3xl md:text-4xl font-black">Mirësevini, {profile.name}!</h1>
+          <h1 className="text-3xl md:text-4xl font-black">
+            {t("welcome_client", { name: profile.name })}
+          </h1>
           <p className="text-xs text-slate-400 font-medium">
             📧 {profile.email} | 📞 {profile.phone}
           </p>
@@ -94,16 +152,16 @@ export default function ClientDashboard() {
 
         <div className="flex items-center gap-3 self-start md:self-center">
           <button
-            onClick={() => router.push("/booking")}
+            onClick={() => router.push("/")}
             className="rounded-full bg-[#00D084] hover:bg-[#00b06f] px-6 py-2.5 text-xs font-extrabold text-white transition-all duration-300 hover:scale-105 active:scale-95 shadow-[0_0_15px_rgba(0,208,132,0.25)] cursor-pointer"
           >
-            Rezervo Transfertë të Re 🚖
+            {t("book_new_transfer")} 🚖
           </button>
           <button
             onClick={handleLogout}
             className="rounded-full border border-white/10 bg-white/5 px-6 py-2.5 text-xs font-bold text-slate-300 hover:bg-white/10 transition cursor-pointer"
           >
-            Dil (Logout)
+            {t("logout")}
           </button>
         </div>
       </div>
@@ -113,7 +171,7 @@ export default function ClientDashboard() {
         {/* Upcoming Transfers */}
         <div className="lg:col-span-7 space-y-6">
           <h2 className="text-xl font-bold flex items-center gap-2.5 border-b border-white/5 pb-2">
-            <span>📅</span> Udhëtimet e Ardhshme ({upcomingBookings.length})
+            <span>📅</span> {t("upcoming_trips")} ({upcomingBookings.length})
           </h2>
 
           <div className="space-y-4">
@@ -127,13 +185,13 @@ export default function ClientDashboard() {
                     <div className="grid gap-1 mt-3 text-xs text-slate-350">
                       <p className="flex items-center gap-1.5 truncate">
                         <span className="text-emerald-500">🟢</span>
-                        <span className="truncate"><strong>Nga:</strong> {b.pickup}</span>
+                        <span className="truncate"><strong>{t("summary_from")}:</strong> {b.pickup}</span>
                       </p>
                       {b.pickup_details && <p className="text-[10px] text-slate-450 pl-5 italic">({b.pickup_details})</p>}
                       
                       <p className="flex items-center gap-1.5 truncate mt-1">
                         <span className="text-red-500">🔴</span>
-                        <span className="truncate"><strong>Tek:</strong> {b.dropoff}</span>
+                        <span className="truncate"><strong>{t("summary_to")}:</strong> {b.dropoff}</span>
                       </p>
                       {b.dropoff_details && <p className="text-[10px] text-slate-450 pl-5 italic">({b.dropoff_details})</p>}
                     </div>
@@ -145,15 +203,15 @@ export default function ClientDashboard() {
 
                 <div className="grid grid-cols-3 gap-2 text-xs bg-black/20 p-4 rounded-2xl border border-white/5 pt-3">
                   <div>
-                    <span className="text-[8px] text-slate-500 uppercase block font-bold">Data & Ora</span>
+                    <span className="text-[8px] text-slate-500 uppercase block font-bold">{t("summary_date")} &amp; {t("summary_time")}</span>
                     <span className="font-bold text-slate-200 mt-0.5 block">{b.travel_date} · {b.travel_time}</span>
                   </div>
                   <div>
-                    <span className="text-[8px] text-slate-500 uppercase block font-bold">Udhëtarë</span>
+                    <span className="text-[8px] text-slate-500 uppercase block font-bold">{t("summary_passengers")}</span>
                     <span className="font-bold text-slate-200 mt-0.5 block">👥 {b.passengers} pax</span>
                   </div>
                   <div>
-                    <span className="text-[8px] text-slate-500 uppercase block font-bold">Çmimi</span>
+                    <span className="text-[8px] text-slate-500 uppercase block font-bold">{t("summary_price")}</span>
                     <span className="font-extrabold text-[#00D084] mt-0.5 block">{b.price} €</span>
                   </div>
                 </div>
@@ -161,7 +219,7 @@ export default function ClientDashboard() {
                 {b.driver_name && (
                   <div className="flex items-center gap-2 text-[11px] text-emerald-450 bg-emerald-500/5 border border-emerald-500/10 p-3 rounded-xl">
                     <span>🚗</span>
-                    <span>Shoferi i caktuar: <strong>{b.driver_name}</strong></span>
+                    <span>{t("assigned_driver")}: <strong>{b.driver_name}</strong></span>
                   </div>
                 )}
               </div>
@@ -170,7 +228,7 @@ export default function ClientDashboard() {
             {upcomingBookings.length === 0 && (
               <div className="text-center py-16 text-slate-450 border border-white/10 bg-white/5 rounded-3xl p-6">
                 <span className="text-3xl block mb-2">🚖</span>
-                Nuk keni asnjë udhëtim të planifikuar.
+                {t("no_upcoming_trips")}
               </div>
             )}
           </div>
@@ -179,7 +237,7 @@ export default function ClientDashboard() {
         {/* Past Transfers History */}
         <div className="lg:col-span-5 space-y-6">
           <h2 className="text-xl font-bold flex items-center gap-2.5 border-b border-white/5 pb-2">
-            <span>✓</span> Historiku i Udhëtimeve ({pastBookings.length})
+            <span>✓</span> {t("trip_history")} ({pastBookings.length})
           </h2>
 
           <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-1">
@@ -197,8 +255,8 @@ export default function ClientDashboard() {
                     {b.status}
                   </span>
                 </div>
-                <p className="text-slate-350 truncate"><span className="text-white/30">Nga:</span> {b.pickup}</p>
-                <p className="text-slate-350 truncate"><span className="text-white/30">Tek:</span> {b.dropoff}</p>
+                <p className="text-slate-355 truncate"><span className="text-white/30">{t("summary_from")}:</span> {b.pickup}</p>
+                <p className="text-slate-355 truncate"><span className="text-white/30">{t("summary_to")}:</span> {b.dropoff}</p>
                 <div className="flex justify-between items-center text-[10px] pt-2 border-t border-white/5 text-slate-450">
                   <span>📅 {b.travel_date} · {b.travel_time}</span>
                   <span className="font-bold text-[#00D084]">{b.price} €</span>
@@ -208,7 +266,7 @@ export default function ClientDashboard() {
 
             {pastBookings.length === 0 && (
               <div className="text-center py-10 text-slate-550 border border-white/5 bg-white/5 rounded-2xl">
-                Asnjë udhëtim i shkuar.
+                {t("no_past_trips")}
               </div>
             )}
           </div>
