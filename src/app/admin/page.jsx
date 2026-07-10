@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, useRef } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import { createClient } from "@supabase/supabase-js";
 
 const ADMIN_WHATSAPP = "355693048000";
 
@@ -22,6 +23,150 @@ export default function AdminPage() {
 
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [passwordInput, setPasswordInput] = useState("");
+
+  // Driver management states
+  const [isDriversModalOpen, setIsDriversModalOpen] = useState(false);
+  const [isDriverFormOpen, setIsDriverFormOpen] = useState(false);
+  const [driverForm, setDriverForm] = useState({
+    id: null,
+    name: "",
+    email: "",
+    phone: "",
+    car: "",
+    plate: "",
+    commission_type: "fixed",
+    commission_value: 85,
+    status: "Active",
+    password: ""
+  });
+  const [isEditingDriver, setIsEditingDriver] = useState(false);
+  const [isSavingDriver, setIsSavingDriver] = useState(false);
+
+  const handleOpenDriversModal = () => {
+    setIsDriversModalOpen(true);
+  };
+
+  const handleAddDriver = () => {
+    setDriverForm({
+      id: null,
+      name: "",
+      email: "",
+      phone: "",
+      car: "",
+      plate: "",
+      commission_type: "fixed",
+      commission_value: 85,
+      status: "Active",
+      password: ""
+    });
+    setIsEditingDriver(false);
+    setIsDriverFormOpen(true);
+  };
+
+  const handleEditDriver = (driver) => {
+    setDriverForm({
+      id: driver.id,
+      name: driver.name || "",
+      email: driver.email || "",
+      phone: driver.phone || "",
+      car: driver.car || "",
+      plate: driver.plate || "",
+      commission_type: driver.commission_type || "fixed",
+      commission_value: driver.commission_value || 85,
+      status: driver.status ? driver.status.trim() : "Active",
+      password: ""
+    });
+    setIsEditingDriver(true);
+    setIsDriverFormOpen(true);
+  };
+
+  const handleSaveDriver = async (e) => {
+    e.preventDefault();
+    setIsSavingDriver(true);
+
+    try {
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+
+      if (!isEditingDriver) {
+        // 1. Create Auth account if email and password are provided
+        if (driverForm.email && driverForm.password) {
+          const tempSupabase = createClient(supabaseUrl, supabaseKey, {
+            auth: { persistSession: false }
+          });
+          
+          const { data: signUpData, error: signUpError } = await tempSupabase.auth.signUp({
+            email: driverForm.email,
+            password: driverForm.password,
+            options: {
+              data: {
+                full_name: driverForm.name,
+                phone: driverForm.phone
+              }
+            }
+          });
+
+          if (signUpError && signUpError.message !== "User already registered") {
+            alert("Auth Registration Error: " + signUpError.message);
+            setIsSavingDriver(false);
+            return;
+          }
+        }
+      }
+
+      // 2. Save to 'drivers' table
+      const driverData = {
+        name: driverForm.name,
+        email: driverForm.email || null,
+        phone: driverForm.phone || null,
+        car: driverForm.car || "",
+        plate: driverForm.plate || "",
+        commission_type: driverForm.commission_type,
+        commission_value: Number(driverForm.commission_value),
+        status: driverForm.status
+      };
+
+      if (isEditingDriver) {
+        const { error } = await supabase
+          .from("drivers")
+          .update(driverData)
+          .eq("id", driverForm.id);
+
+        if (error) throw error;
+        alert("Driver updated successfully!");
+      } else {
+        const { error } = await supabase
+          .from("drivers")
+          .insert(driverData);
+
+        if (error) throw error;
+        alert("Driver created successfully!");
+      }
+
+      setIsDriverFormOpen(false);
+      fetchData(true);
+    } catch (err) {
+      alert("Error saving driver: " + err.message);
+    } finally {
+      setIsSavingDriver(false);
+    }
+  };
+
+  const handleDeleteDriver = async (driverId) => {
+    if (!confirm("Are you sure you want to delete this driver? This action cannot be undone.")) return;
+
+    const { error } = await supabase
+      .from("drivers")
+      .delete()
+      .eq("id", driverId);
+
+    if (error) {
+      alert("Error deleting driver: " + error.message);
+    } else {
+      alert("Driver deleted successfully!");
+      fetchData(true);
+    }
+  };
 
   // Monthly stats & reset states
   const [selectedMonth, setSelectedMonth] = useState(() => {
@@ -107,7 +252,6 @@ export default function AdminPage() {
     const driversResult = await supabase
       .from("drivers")
       .select("*")
-      .eq("status", "Active")
       .order("id", { ascending: true });
 
     if (bookingsResult.error) alert(bookingsResult.error.message);
@@ -728,12 +872,20 @@ export default function AdminPage() {
           </h1>
         </div>
 
-        <button
-          onClick={fetchData}
-          className="rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold px-6 py-3 text-xs tracking-wider uppercase transition-all duration-300 hover:scale-105 active:scale-95 shadow-sm cursor-pointer"
-        >
-          Refresh Data
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleOpenDriversModal}
+            className="rounded-xl bg-slate-800 hover:bg-slate-750 text-white font-extrabold px-6 py-3 text-xs tracking-wider uppercase transition-all duration-300 hover:scale-105 active:scale-95 shadow-sm cursor-pointer"
+          >
+            🚗 Manage Drivers
+          </button>
+          <button
+            onClick={fetchData}
+            className="rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold px-6 py-3 text-xs tracking-wider uppercase transition-all duration-300 hover:scale-105 active:scale-95 shadow-sm cursor-pointer"
+          >
+            Refresh Data
+          </button>
+        </div>
       </div>
 
       {/* Report Configuration & Month Selector Bar */}
@@ -1061,7 +1213,7 @@ export default function AdminPage() {
                       className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs text-slate-800 outline-none cursor-pointer"
                     >
                       <option value="">No Driver Assigned</option>
-                      {drivers.map((driver) => (
+                      {drivers.filter(d => d.status && d.status.trim() === "Active").map((driver) => (
                         <option key={driver.id} value={driver.id} className="bg-white text-slate-800">
                           {driver.name}
                         </option>
@@ -1424,6 +1576,262 @@ export default function AdminPage() {
                 onClick={() => {
                   setActiveModal(null);
                   setModalSearch("");
+                }}
+                className="rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold px-6 py-2.5 text-xs transition cursor-pointer"
+              >
+                Mbyll
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+      {/* Drivers Management Modal */}
+      {isDriversModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-fade-in text-slate-800">
+          <div className="w-full max-w-5xl bg-white rounded-3xl border border-slate-200 shadow-2xl p-6 md:p-8 flex flex-col max-h-[90vh] animate-scale-in">
+            
+            {/* Modal Header */}
+            <div className="flex items-start justify-between border-b border-slate-200 pb-4 mb-6">
+              <div>
+                <h3 className="text-xl font-black text-slate-900 leading-tight">
+                  🚗 Menaxhimi i Shoferëve (Driver Management)
+                </h3>
+                <p className="text-xs text-slate-450 mt-1">
+                  Krijo shoferë të rinj me llogari hyrëse, ndrysho detajet ose statusin e tyre.
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  setIsDriversModalOpen(false);
+                  setIsDriverFormOpen(false);
+                }}
+                className="text-2xl text-slate-455 hover:text-slate-900 leading-none p-1 cursor-pointer transition"
+              >
+                &times;
+              </button>
+            </div>
+
+            {/* Main Modal Content Split: List on left, form on right */}
+            <div className="flex-1 overflow-y-auto grid gap-6 md:grid-cols-12 min-h-0 pr-1 custom-scrollbar">
+              
+              {/* Left Column: Drivers List */}
+              <div className={`${isDriverFormOpen ? "md:col-span-7" : "md:col-span-12"} space-y-4`}>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-bold text-slate-450 uppercase">Shoferët e regjistruar ({drivers.length})</span>
+                  {!isDriverFormOpen && (
+                    <button
+                      onClick={handleAddDriver}
+                      className="rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold px-4 py-2 text-xs transition cursor-pointer"
+                    >
+                      + Shto Shofer të Ri
+                    </button>
+                  )}
+                </div>
+
+                <div className="overflow-x-auto rounded-xl border border-slate-200 bg-slate-50">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead className="bg-slate-100 border-b border-slate-200 text-slate-700 font-bold">
+                      <tr>
+                        <th className="p-3">Emri</th>
+                        <th className="p-3">Email / Telefon</th>
+                        <th className="p-3">Mjeti / Targa</th>
+                        <th className="p-3 text-center">Komisioni</th>
+                        <th className="p-3 text-center">Statusi</th>
+                        <th className="p-3 text-center">Veprime</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-150 bg-white">
+                      {drivers.map((d) => (
+                        <tr key={d.id} className="hover:bg-slate-50/50">
+                          <td className="p-3 font-bold text-slate-800">{d.name}</td>
+                          <td className="p-3 text-slate-600">
+                            <div>{d.email || "—"}</div>
+                            <div className="text-[10px] text-slate-400">{d.phone || "—"}</div>
+                          </td>
+                          <td className="p-3 text-slate-600">
+                            <div>{d.car || "—"}</div>
+                            <div className="text-[10px] text-slate-450 font-mono">{d.plate || "—"}</div>
+                          </td>
+                          <td className="p-3 text-center font-semibold">
+                            {d.commission_value}% ({d.commission_type})
+                          </td>
+                          <td className="p-3 text-center">
+                            <span className={`rounded-full px-2.5 py-0.5 text-[9px] font-bold ${
+                              d.status && d.status.trim() === "Active"
+                                ? "text-emerald-700 bg-emerald-50 border border-emerald-100"
+                                : "text-rose-700 bg-rose-50 border border-rose-100"
+                            }`}>
+                              {d.status || "Inactive"}
+                            </span>
+                          </td>
+                          <td className="p-3 text-center space-x-1.5 whitespace-nowrap">
+                            <button
+                              onClick={() => handleEditDriver(d)}
+                              className="text-blue-600 hover:text-blue-800 font-bold hover:underline cursor-pointer"
+                            >
+                              Edit
+                            </button>
+                            <span className="text-slate-300">|</span>
+                            <button
+                              onClick={() => handleDeleteDriver(d.id)}
+                              className="text-rose-600 hover:text-rose-800 font-bold hover:underline cursor-pointer"
+                            >
+                              Delete
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+
+                      {drivers.length === 0 && (
+                        <tr>
+                          <td colSpan={6} className="p-8 text-center text-slate-400">Nuk ka shoferë në sistem.</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Right Column: Add/Edit Form Panel */}
+              {isDriverFormOpen && (
+                <div className="md:col-span-5 border border-slate-200 rounded-2xl bg-slate-50/50 p-5 space-y-4 animate-scale-in">
+                  <div className="flex justify-between items-center border-b border-slate-200 pb-2">
+                    <h4 className="font-bold text-slate-800 text-sm">
+                      {isEditingDriver ? "📝 Modifiko Shoferin" : "➕ Shto Shofer të Ri"}
+                    </h4>
+                    <button
+                      onClick={() => setIsDriverFormOpen(false)}
+                      className="text-xs text-slate-450 hover:text-slate-700"
+                    >
+                      Anullo
+                    </button>
+                  </div>
+
+                  <form onSubmit={handleSaveDriver} className="space-y-3.5 text-xs">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Emri i Plotë</label>
+                      <input
+                        type="text"
+                        value={driverForm.name}
+                        onChange={(e) => setDriverForm({ ...driverForm, name: e.target.value })}
+                        placeholder="p.sh. Dionis Arapi"
+                        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-800 outline-none focus:border-emerald-500/40"
+                        required
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Email</label>
+                        <input
+                          type="email"
+                          value={driverForm.email}
+                          onChange={(e) => setDriverForm({ ...driverForm, email: e.target.value })}
+                          placeholder="shoferi@fast.com"
+                          className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-800 outline-none focus:border-emerald-500/40"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Numri i Telefonit</label>
+                        <input
+                          type="text"
+                          value={driverForm.phone}
+                          onChange={(e) => setDriverForm({ ...driverForm, phone: e.target.value })}
+                          placeholder="+355..."
+                          className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-850 outline-none focus:border-emerald-500/40"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Password Field (Only shown when adding a new driver) */}
+                    {!isEditingDriver && (
+                      <div className="space-y-1 bg-emerald-500/5 border border-emerald-500/10 p-3 rounded-xl">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                          Fjalëkalimi i Shoferit (Driver Password)
+                        </label>
+                        <input
+                          type="password"
+                          value={driverForm.password}
+                          onChange={(e) => setDriverForm({ ...driverForm, password: e.target.value })}
+                          placeholder="Fjalëkalim i ri për kyçjen e shoferit"
+                          className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-800 outline-none focus:border-emerald-500/40 mt-1"
+                          required={!!driverForm.email}
+                        />
+                        <p className="text-[9px] text-slate-450 mt-1 italic">
+                          *Kjo do të krijojë llogarinë automatikisht në Auth që shoferi të logohet menjëherë.
+                        </p>
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Mjeti / Car</label>
+                        <input
+                          type="text"
+                          value={driverForm.car}
+                          onChange={(e) => setDriverForm({ ...driverForm, car: e.target.value })}
+                          placeholder="p.sh. BYD Tang"
+                          className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-800 outline-none focus:border-emerald-500/40"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Targa / Plate</label>
+                        <input
+                          type="text"
+                          value={driverForm.plate}
+                          onChange={(e) => setDriverForm({ ...driverForm, plate: e.target.value })}
+                          placeholder="p.sh. AB 123 CD"
+                          className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-800 outline-none focus:border-emerald-500/40"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Vlera e Komisionit (%)</label>
+                        <input
+                          type="number"
+                          value={driverForm.commission_value}
+                          onChange={(e) => setDriverForm({ ...driverForm, commission_value: e.target.value })}
+                          className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-800 outline-none focus:border-emerald-500/40"
+                          min="0"
+                          max="100"
+                          required
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Statusi</label>
+                        <select
+                          value={driverForm.status}
+                          onChange={(e) => setDriverForm({ ...driverForm, status: e.target.value })}
+                          className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-slate-800 outline-none"
+                        >
+                          <option value="Active">Active (Mund të caktohet)</option>
+                          <option value="Inactive">Inactive (Nuk mund të caktohet)</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={isSavingDriver}
+                      className="w-full rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-extrabold py-3 text-xs tracking-wider uppercase transition shadow-sm mt-3 cursor-pointer"
+                    >
+                      {isSavingDriver ? "Duke u ruajtur..." : "Ruaj Shoferin"}
+                    </button>
+                  </form>
+                </div>
+              )}
+
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex justify-end gap-3 mt-6 border-t border-slate-150 pt-4">
+              <button
+                onClick={() => {
+                  setIsDriversModalOpen(false);
+                  setIsDriverFormOpen(false);
                 }}
                 className="rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold px-6 py-2.5 text-xs transition cursor-pointer"
               >
