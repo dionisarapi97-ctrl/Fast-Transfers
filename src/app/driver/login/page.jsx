@@ -14,7 +14,7 @@ const languages = [
   { code: "es", label: "Español", flag: "🇪🇸" },
 ];
 
-export default function LoginPage() {
+export default function DriverLoginPage() {
   const router = useRouter();
   const { t, language, setLanguage } = useLanguage();
   const [email, setEmail] = useState("");
@@ -24,12 +24,12 @@ export default function LoginPage() {
   const [langOpen, setLangOpen] = useState(false);
   const dropdownRef = useRef(null);
 
-  // If already logged in, redirect to appropriate page
+  // If already logged in, redirect to driver dashboard if valid
   useEffect(() => {
     async function checkActiveSession() {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
-        handleRoleRedirect(session.user.email);
+        handleDriverRedirect(session.user.email);
       }
     }
     checkActiveSession();
@@ -44,7 +44,7 @@ export default function LoginPage() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleRoleRedirect = async (userEmail) => {
+  const handleDriverRedirect = async (userEmail) => {
     try {
       const { data: driver, error } = await supabase
         .from("drivers")
@@ -57,17 +57,18 @@ export default function LoginPage() {
       }
 
       if (driver && driver.status && driver.status.trim() === "Active") {
-        // This is a driver, log them out of the client portal and show error
+        router.push("/driver/dashboard");
+      } else {
+        // Not a driver, sign out and show error
         await supabase.auth.signOut();
         setErrorMsg(language === "sq"
-          ? "Kjo llogari është e regjistruar si shofer. Ju lutem përdorni login-in e shoferëve."
-          : "This account is registered as a driver. Please use the driver login portal.");
+          ? "Kjo llogari nuk është e regjistruar si shofer i autorizuar. Ju lutem kyçuni si klient."
+          : "This account is not registered as an authorized driver. Please login as a client.");
         setLoading(false);
-      } else {
-        router.push("/client/dashboard");
       }
     } catch (err) {
-      router.push("/client/dashboard");
+      await supabase.auth.signOut();
+      router.push("/login");
     }
   };
 
@@ -99,7 +100,7 @@ export default function LoginPage() {
       }
 
       if (data?.user) {
-        await handleRoleRedirect(data.user.email);
+        await handleDriverRedirect(data.user.email);
       }
     } catch (err) {
       setErrorMsg(language === "sq" ? "Ndodhi një gabim gjatë hyrjes. Provoni përsëri." : "An error occurred during log in. Try again.");
@@ -148,12 +149,12 @@ export default function LoginPage() {
         
         {/* Header */}
         <div className="text-center space-y-3">
-          <span className="text-4xl">👤</span>
-          <h2 className="text-3xl font-black bg-gradient-to-r from-slate-100 to-emerald-400 bg-clip-text text-transparent">
+          <span className="text-4xl">🚖</span>
+          <h2 className="text-3xl font-black bg-gradient-to-r from-slate-100 to-amber-400 bg-clip-text text-transparent">
             Fast Transfers
           </h2>
           <p className="text-xs uppercase tracking-widest font-bold text-slate-400">
-            {language === "sq" ? "Kyçja e Klientëve (Client Login)" : "Client Login Portal"}
+            {language === "sq" ? "Kyçja e Shoferëve (Driver Login)" : "Driver Login Portal"}
           </p>
         </div>
 
@@ -172,8 +173,8 @@ export default function LoginPage() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="example@email.com"
-              className="w-full rounded-2xl border border-white/15 bg-white/5 px-5 py-4 text-sm text-white outline-none focus:border-[#00D084] focus:bg-white/10 transition"
+              placeholder="driver@email.com"
+              className="w-full rounded-2xl border border-white/15 bg-white/5 px-5 py-4 text-sm text-white outline-none focus:border-amber-400 focus:bg-white/10 transition"
               required
             />
           </div>
@@ -185,7 +186,7 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
-              className="w-full rounded-2xl border border-white/15 bg-white/5 px-5 py-4 text-sm text-white outline-none focus:border-[#00D084] focus:bg-white/10 transition"
+              className="w-full rounded-2xl border border-white/15 bg-white/5 px-5 py-4 text-sm text-white outline-none focus:border-amber-400 focus:bg-white/10 transition"
               required
             />
           </div>
@@ -193,29 +194,23 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-full bg-[#00D084] hover:bg-[#00b06f] disabled:opacity-50 text-white font-extrabold py-4 text-sm tracking-wider uppercase transition-all duration-300 shadow-[0_0_20px_rgba(0,208,132,0.2)] hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+            className="w-full rounded-full bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white font-extrabold py-4 text-sm tracking-wider uppercase transition-all duration-300 shadow-[0_0_20px_rgba(245,158,11,0.2)] hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
           >
-            {loading ? t("logging_in") : t("button_login")}
+            {loading ? (language === "sq" ? "Duke u kyçur..." : "Logging in...") : (language === "sq" ? "Kyçu si Shofer" : "Login as Driver")}
           </button>
         </form>
 
         {/* Links */}
         <div className="text-center text-xs text-slate-400 border-t border-white/10 pt-6 space-y-4">
-          <p>
-            {t("new_client_prompt")?.split("?")[0]}?{" "}
-            <span 
-              onClick={() => router.push("/signup")} 
-              className="text-[#00D084] hover:underline font-bold cursor-pointer"
-            >
-              {t("button_signup")}
-            </span>
+          <p className="text-[11px] text-slate-400">
+            {language === "sq" ? "*Llogaritë e shoferëve regjistrohen vetëm nga administratori." : "*Driver accounts can only be registered by the administrator."}
           </p>
           <div className="pt-2 border-t border-white/5">
             <span 
-              onClick={() => router.push("/driver/login")} 
-              className="text-amber-400 hover:text-amber-300 hover:underline font-bold cursor-pointer flex items-center justify-center gap-1.5"
+              onClick={() => router.push("/login")} 
+              className="text-[#00D084] hover:text-emerald-400 hover:underline font-bold cursor-pointer flex items-center justify-center gap-1.5"
             >
-              🚖 {language === "sq" ? "Jeni Shofer? Kyçuni këtu ➔" : "Are you a Driver? Login here ➔"}
+              👤 {language === "sq" ? "Jeni Klient? Kyçuni këtu ➔" : "Are you a Client? Login here ➔"}
             </span>
           </div>
         </div>
