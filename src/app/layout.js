@@ -15,6 +15,12 @@ const geistMono = Geist_Mono({
 export const metadata = {
   title: "Fast Transfers",
   description: "Premium Airport Taxi & Transfer Services in Albania",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Fast Transfers",
+  },
 };
 
 export default function RootLayout({ children }) {
