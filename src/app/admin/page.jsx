@@ -42,6 +42,11 @@ export default function AdminPage() {
   const [isEditingDriver, setIsEditingDriver] = useState(false);
   const [isSavingDriver, setIsSavingDriver] = useState(false);
 
+  // Client and report drill-down states
+  const [isClientsModalOpen, setIsClientsModalOpen] = useState(false);
+  const [clientSearch, setClientSearch] = useState("");
+  const [selectedReportDriver, setSelectedReportDriver] = useState(null); // { id, name }
+
   const handleOpenDriversModal = () => {
     setIsDriversModalOpen(true);
   };
@@ -165,6 +170,49 @@ export default function AdminPage() {
     } else {
       alert("Driver deleted successfully!");
       fetchData(true);
+    }
+  };
+
+  const uniqueClients = useMemo(() => {
+    const clientsMap = {};
+    bookings.forEach(b => {
+      const email = b.customer_email || b.customer_phone || b.customer_name;
+      if (!email) return;
+      
+      const key = email.toLowerCase().trim();
+      if (!clientsMap[key]) {
+        clientsMap[key] = {
+          name: b.customer_name || "—",
+          email: b.customer_email || "—",
+          phone: b.customer_phone || "—",
+          bookingsCount: 0,
+          totalSpent: 0
+        };
+      }
+      clientsMap[key].bookingsCount += 1;
+      if (b.status !== "Cancelled") {
+        clientsMap[key].totalSpent += Number(b.total_price || b.price || 0);
+      }
+    });
+    return Object.values(clientsMap);
+  }, [bookings]);
+
+  const handleResetClientPassword = async (email) => {
+    if (!email || email === "—" || !email.includes("@")) {
+      alert("Ky përdorues nuk ka një email të vlefshëm për të dërguar rivendosjen.");
+      return;
+    }
+    
+    if (!confirm(`A jeni i sigurt që dëshironi të dërgoni email-in e rivendosjes së fjalëkalimit për: ${email}?`)) return;
+    
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/login`
+    });
+    
+    if (error) {
+      alert("Gabim gjatë dërgimit: " + error.message);
+    } else {
+      alert("Email-i për rivendosjen e fjalëkalimit u dërgua me sukses te: " + email);
     }
   };
 
@@ -769,6 +817,48 @@ export default function AdminPage() {
     return list;
   }, [driverSummaries]);
 
+  const driverBookingsSummary = useMemo(() => {
+    return drivers.map(d => {
+      const driverBookings = monthlyBookings.filter(b => b.driver_id === d.id);
+      const active = driverBookings.filter(b => b.status !== "Cancelled").length;
+      const completed = driverBookings.filter(b => b.status === "Completed").length;
+      const cancelled = driverBookings.filter(b => b.status === "Cancelled").length;
+      return {
+        name: d.name,
+        active,
+        completed,
+        cancelled,
+        total: driverBookings.length
+      };
+    });
+  }, [drivers, monthlyBookings]);
+
+  // Selected driver detail bookings calculation
+  const driverDetailBookings = useMemo(() => {
+    if (!selectedReportDriver) return [];
+    return monthlyBookings.filter(b => b.driver_id === selectedReportDriver.id && b.status !== "Cancelled");
+  }, [selectedReportDriver, monthlyBookings]);
+
+  const driverTripRows = useMemo(() => {
+    if (!selectedReportDriver) return [];
+    const list = driverDetailBookings.map(b => [
+      b.travel_date,
+      b.booking_id,
+      b.customer_name || "-",
+      `${b.pickup} ➔ ${b.dropoff}`,
+      `${b.driver_share || 0} €`,
+      `${b.company_share || 0} €`,
+      `${b.total_price || b.price || 0} €`
+    ]);
+    
+    const sumDriverShare = driverDetailBookings.reduce((sum, b) => sum + Number(b.driver_share || 0), 0);
+    const sumCompanyShare = driverDetailBookings.reduce((sum, b) => sum + Number(b.company_share || 0), 0);
+    const sumTotal = driverDetailBookings.reduce((sum, b) => sum + Number(b.total_price || b.price || 0), 0);
+    
+    list.push(["TOTALI", `${driverDetailBookings.length} udhëtime`, "", "", `${sumDriverShare} €`, `${sumCompanyShare} €`, `${sumTotal} €`]);
+    return list;
+  }, [selectedReportDriver, driverDetailBookings]);
+
   // Modal 3 Calculations - Platform Earnings
   const modalFilteredPlatformBookings = useMemo(() => {
     return monthlyBookings
@@ -872,18 +962,35 @@ export default function AdminPage() {
           </h1>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <button
             onClick={handleOpenDriversModal}
-            className="rounded-xl bg-slate-800 hover:bg-slate-750 text-white font-extrabold px-6 py-3 text-xs tracking-wider uppercase transition-all duration-300 hover:scale-105 active:scale-95 shadow-sm cursor-pointer"
+            className="rounded-xl bg-slate-800 hover:bg-slate-750 text-white font-extrabold px-5 py-3 text-xs tracking-wider uppercase transition-all duration-300 hover:scale-105 active:scale-95 shadow-sm cursor-pointer"
           >
             🚗 Manage Drivers
           </button>
           <button
+            onClick={() => {
+              setIsClientsModalOpen(true);
+            }}
+            className="rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold px-5 py-3 text-xs tracking-wider uppercase transition-all duration-300 hover:scale-105 active:scale-95 shadow-sm cursor-pointer"
+          >
+            👥 Manage Clients
+          </button>
+          <button
             onClick={fetchData}
-            className="rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold px-6 py-3 text-xs tracking-wider uppercase transition-all duration-300 hover:scale-105 active:scale-95 shadow-sm cursor-pointer"
+            className="rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold px-5 py-3 text-xs tracking-wider uppercase transition-all duration-300 hover:scale-105 active:scale-95 shadow-sm cursor-pointer"
           >
             Refresh Data
+          </button>
+          <button
+            onClick={() => {
+              sessionStorage.removeItem("admin_auth");
+              window.location.href = "/";
+            }}
+            className="rounded-xl border border-rose-500 bg-rose-50 hover:bg-rose-100 text-rose-600 font-extrabold px-5 py-3 text-xs tracking-wider uppercase transition-all duration-300 hover:scale-105 active:scale-95 shadow-sm cursor-pointer"
+          >
+            🚪 Exit / Log Out
           </button>
         </div>
       </div>
@@ -941,7 +1048,8 @@ export default function AdminPage() {
           title="Total Bookings" 
           value={stats.active} 
           icon="📊" 
-          desc={`Active: ${stats.active} | Cancelled: ${stats.cancelled}`} 
+          desc={`Active: ${stats.active} | Cancelled: ${stats.cancelled} (Click)`} 
+          onClick={() => { setActiveModal("total_bookings"); setModalSearch(""); }}
         />
         <Stat 
           title="Gross Revenue" 
@@ -1367,8 +1475,13 @@ export default function AdminPage() {
               <div>
                 <h3 className="text-xl font-black text-slate-900 leading-tight">
                   {activeModal === "revenue" && `Detajet e Gross Revenue — ${formatMonthNameStr(selectedMonth)}`}
-                  {activeModal === "drivers" && `Detajet e Drivers Share — ${formatMonthNameStr(selectedMonth)}`}
+                  {activeModal === "drivers" && (
+                    selectedReportDriver
+                      ? `Udhëtimet e kryera nga ${selectedReportDriver.name} — ${formatMonthNameStr(selectedMonth)}`
+                      : `Detajet e Drivers Share — ${formatMonthNameStr(selectedMonth)}`
+                  )}
                   {activeModal === "platform" && `Detajet e Platform Earnings — ${formatMonthNameStr(selectedMonth)}`}
+                  {activeModal === "total_bookings" && `Statistikat e Rezervimeve — ${formatMonthNameStr(selectedMonth)}`}
                 </h3>
                 <p className="text-xs text-slate-450 mt-1">
                   Këtu po shihni analizën e plotë të të dhënave për muajin e zgjedhur.
@@ -1379,6 +1492,7 @@ export default function AdminPage() {
                 onClick={() => {
                   setActiveModal(null);
                   setModalSearch("");
+                  setSelectedReportDriver(null);
                 }}
                 className="text-2xl text-slate-450 hover:text-slate-900 leading-none p-1 cursor-pointer transition"
               >
@@ -1388,53 +1502,84 @@ export default function AdminPage() {
 
             {/* Modal Actions & Search Bar */}
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
-              <div className="relative flex-1 max-w-md">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs">🔍</span>
-                <input
-                  value={modalSearch}
-                  onChange={(e) => setModalSearch(e.target.value)}
-                  placeholder={
-                    activeModal === "drivers" 
-                      ? "Kërko shofer..." 
-                      : "Kërko Client, Booking ID, Shofer..."
-                  }
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 pl-8 pr-4 py-2 text-xs text-slate-800 outline-none placeholder:text-slate-450 focus:bg-white focus:border-emerald-500/40 transition"
-                />
-              </div>
+              {activeModal === "drivers" && selectedReportDriver ? (
+                <button
+                  onClick={() => setSelectedReportDriver(null)}
+                  className="rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold px-4 py-2 text-xs transition cursor-pointer"
+                >
+                  ← Kthehu te Shoferët (All Drivers)
+                </button>
+              ) : activeModal === "total_bookings" ? (
+                <div className="text-xs text-slate-500 font-medium">Përmbledhje analitike e statusit të rezervimeve për çdo shofer.</div>
+              ) : (
+                <div className="relative flex-1 max-w-md">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs">🔍</span>
+                  <input
+                    value={modalSearch}
+                    onChange={(e) => setModalSearch(e.target.value)}
+                    placeholder={
+                      activeModal === "drivers" 
+                        ? "Kërko shofer..." 
+                        : "Kërko Client, Booking ID, Shofer..."
+                    }
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50 pl-8 pr-4 py-2 text-xs text-slate-800 outline-none placeholder:text-slate-455 focus:bg-white focus:border-emerald-500/40 transition"
+                  />
+                </div>
+              )}
 
               {/* Export Buttons */}
-              <div className="flex flex-wrap items-center gap-2">
-                <button
-                  onClick={() => {
-                    if (activeModal === "revenue") exportToPDF(`Raporti i Gross Revenue`, ["Data", "Booking ID", "Klienti", "Shoferi", "Rruga", "Statusi", "Pagesa"], revenueRows);
-                    if (activeModal === "drivers") exportToPDF(`Raporti i Drivers Share`, ["Shoferi", "Telefon", "Email", "Total Bookings", "Vlerësimi", "Driver Share", "Company Share", "Total Gross"], driversShareRows);
-                    if (activeModal === "platform") exportToPDF(`Raporti i Platform Earnings`, ["Data", "Booking ID", "Klienti", "Shoferi", "Total Fare", "Driver Share", "Platform Share", "Statusi"], platformEarningsRows);
-                  }}
-                  className="rounded-xl border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 font-bold px-4 py-2 text-xs transition cursor-pointer flex items-center gap-1.5"
-                >
-                  📄 PDF
-                </button>
-                <button
-                  onClick={() => {
-                    if (activeModal === "revenue") exportToWord(`Raporti i Gross Revenue`, ["Data", "Booking ID", "Klienti", "Shoferi", "Rruga", "Statusi", "Pagesa"], revenueRows);
-                    if (activeModal === "drivers") exportToWord(`Raporti i Drivers Share`, ["Shoferi", "Telefon", "Email", "Total Bookings", "Vlerësimi", "Driver Share", "Company Share", "Total Gross"], driversShareRows);
-                    if (activeModal === "platform") exportToWord(`Raporti i Platform Earnings`, ["Data", "Booking ID", "Klienti", "Shoferi", "Total Fare", "Driver Share", "Platform Share", "Statusi"], platformEarningsRows);
-                  }}
-                  className="rounded-xl border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 font-bold px-4 py-2 text-xs transition cursor-pointer flex items-center gap-1.5"
-                >
-                  📝 Word
-                </button>
-                <button
-                  onClick={() => {
-                    if (activeModal === "revenue") exportToCSV(`Raporti i Gross Revenue`, ["Data", "Booking ID", "Klienti", "Shoferi", "Rruga", "Statusi", "Pagesa"], revenueRows);
-                    if (activeModal === "drivers") exportToCSV(`Raporti i Drivers Share`, ["Shoferi", "Telefon", "Email", "Total Bookings", "Vlerësimi", "Driver Share", "Company Share", "Total Gross"], driversShareRows);
-                    if (activeModal === "platform") exportToCSV(`Raporti i Platform Earnings`, ["Data", "Booking ID", "Klienti", "Shoferi", "Total Fare", "Driver Share", "Platform Share", "Statusi"], platformEarningsRows);
-                  }}
-                  className="rounded-xl border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 font-bold px-4 py-2 text-xs transition cursor-pointer flex items-center gap-1.5"
-                >
-                  📊 Excel (CSV)
-                </button>
-              </div>
+              {activeModal !== "total_bookings" && (
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    onClick={() => {
+                      if (activeModal === "revenue") exportToPDF(`Raporti i Gross Revenue`, ["Data", "Booking ID", "Klienti", "Shoferi", "Rruga", "Statusi", "Pagesa"], revenueRows);
+                      if (activeModal === "drivers") {
+                        if (selectedReportDriver) {
+                          exportToPDF(`Raporti i Udhëtimeve - ${selectedReportDriver.name}`, ["Data", "Booking ID", "Klienti", "Rruga", "Driver Share", "Company Share", "Total Gross"], driverTripRows);
+                        } else {
+                          exportToPDF(`Raporti i Drivers Share`, ["Shoferi", "Telefon", "Email", "Total Bookings", "Vlerësimi", "Driver Share", "Company Share", "Total Gross"], driversShareRows);
+                        }
+                      }
+                      if (activeModal === "platform") exportToPDF(`Raporti i Platform Earnings`, ["Data", "Booking ID", "Klienti", "Shoferi", "Total Fare", "Driver Share", "Platform Share", "Statusi"], platformEarningsRows);
+                    }}
+                    className="rounded-xl border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 font-bold px-4 py-2 text-xs transition cursor-pointer flex items-center gap-1.5"
+                  >
+                    📄 PDF
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (activeModal === "revenue") exportToWord(`Raporti i Gross Revenue`, ["Data", "Booking ID", "Klienti", "Shoferi", "Rruga", "Statusi", "Pagesa"], revenueRows);
+                      if (activeModal === "drivers") {
+                        if (selectedReportDriver) {
+                          exportToWord(`Raporti i Udhëtimeve - ${selectedReportDriver.name}`, ["Data", "Booking ID", "Klienti", "Rruga", "Driver Share", "Company Share", "Total Gross"], driverTripRows);
+                        } else {
+                          exportToWord(`Raporti i Drivers Share`, ["Shoferi", "Telefon", "Email", "Total Bookings", "Vlerësimi", "Driver Share", "Company Share", "Total Gross"], driversShareRows);
+                        }
+                      }
+                      if (activeModal === "platform") exportToWord(`Raporti i Platform Earnings`, ["Data", "Booking ID", "Klienti", "Shoferi", "Total Fare", "Driver Share", "Platform Share", "Statusi"], platformEarningsRows);
+                    }}
+                    className="rounded-xl border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 font-bold px-4 py-2 text-xs transition cursor-pointer flex items-center gap-1.5"
+                  >
+                    📝 Word
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (activeModal === "revenue") exportToCSV(`Raporti i Gross Revenue`, ["Data", "Booking ID", "Klienti", "Shoferi", "Rruga", "Statusi", "Pagesa"], revenueRows);
+                      if (activeModal === "drivers") {
+                        if (selectedReportDriver) {
+                          exportToCSV(`Raporti i Udhëtimeve - ${selectedReportDriver.name}`, ["Data", "Booking ID", "Klienti", "Rruga", "Driver Share", "Company Share", "Total Gross"], driverTripRows);
+                        } else {
+                          exportToCSV(`Raporti i Drivers Share`, ["Shoferi", "Telefon", "Email", "Total Bookings", "Vlerësimi", "Driver Share", "Company Share", "Total Gross"], driversShareRows);
+                        }
+                      }
+                      if (activeModal === "platform") exportToCSV(`Raporti i Platform Earnings`, ["Data", "Booking ID", "Klienti", "Shoferi", "Total Fare", "Driver Share", "Platform Share", "Statusi"], platformEarningsRows);
+                    }}
+                    className="rounded-xl border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 font-bold px-4 py-2 text-xs transition cursor-pointer flex items-center gap-1.5"
+                  >
+                    📊 Excel (CSV)
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Table Container */}
@@ -1453,16 +1598,28 @@ export default function AdminPage() {
                     </tr>
                   )}
                   {activeModal === "drivers" && (
-                    <tr>
-                      <th className="p-3.5">Shoferi</th>
-                      <th className="p-3.5">Telefon</th>
-                      <th className="p-3.5">Email</th>
-                      <th className="p-3.5 text-center">Total Bookings</th>
-                      <th className="p-3.5 text-center">Vlerësimi</th>
-                      <th className="p-3.5 text-right">Driver Share (€)</th>
-                      <th className="p-3.5 text-right">Company Share (€)</th>
-                      <th className="p-3.5 text-right">Total Gross (€)</th>
-                    </tr>
+                    selectedReportDriver ? (
+                      <tr>
+                        <th className="p-3.5">Data</th>
+                        <th className="p-3.5">Booking ID</th>
+                        <th className="p-3.5">Klienti</th>
+                        <th className="p-3.5">Rruga</th>
+                        <th className="p-3.5 text-right">Driver Share (€)</th>
+                        <th className="p-3.5 text-right">Company Share (€)</th>
+                        <th className="p-3.5 text-right">Total Gross (€)</th>
+                      </tr>
+                    ) : (
+                      <tr>
+                        <th className="p-3.5">Shoferi</th>
+                        <th className="p-3.5">Telefon</th>
+                        <th className="p-3.5">Email</th>
+                        <th className="p-3.5 text-center">Total Bookings</th>
+                        <th className="p-3.5 text-center">Vlerësimi</th>
+                        <th className="p-3.5 text-right">Driver Share (€)</th>
+                        <th className="p-3.5 text-right">Company Share (€)</th>
+                        <th className="p-3.5 text-right">Total Gross (€)</th>
+                      </tr>
+                    )
                   )}
                   {activeModal === "platform" && (
                     <tr>
@@ -1476,33 +1633,47 @@ export default function AdminPage() {
                       <th className="p-3.5 text-center">Statusi i Pagesave</th>
                     </tr>
                   )}
+                  {activeModal === "total_bookings" && (
+                    <tr>
+                      <th className="p-3.5">Shoferi (Driver)</th>
+                      <th className="p-3.5 text-center">Udhëtime Aktive (Active)</th>
+                      <th className="p-3.5 text-center">Të Përfunduara (Completed)</th>
+                      <th className="p-3.5 text-center">Të Anulluara (Cancelled)</th>
+                      <th className="p-3.5 text-center">Gjithsej (Total)</th>
+                    </tr>
+                  )}
                 </thead>
                 <tbody className="divide-y divide-slate-150 bg-white">
-                  {/* Data Rows */}
-                  {activeModal === "revenue" && revenueRows.slice(0, -1).map((row, idx) => (
-                    <tr key={idx} className="hover:bg-slate-50/60 transition">
-                      <td className="p-3.5 font-medium text-slate-500 whitespace-nowrap">{row[0]}</td>
-                      <td className="p-3.5"><span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-100 rounded-full px-2 py-0.5">{row[1]}</span></td>
-                      <td className="p-3.5 font-bold text-slate-800">{row[2]}</td>
-                      <td className="p-3.5 text-slate-600 font-semibold">{row[3]}</td>
-                      <td className="p-3.5 text-slate-500 max-w-[200px] truncate" title={row[4]}>{row[4]}</td>
-                      <td className="p-3.5"><span className={`rounded-full border px-2 py-0.5 text-[9px] font-bold ${statusClass(row[5])}`}>{row[5]}</span></td>
-                      <td className="p-3.5 text-right font-black text-slate-800">{row[6]}</td>
-                    </tr>
-                  ))}
-
-                  {activeModal === "drivers" && driversShareRows.slice(0, -1).map((row, idx) => (
-                    <tr key={idx} className="hover:bg-slate-50/60 transition">
-                      <td className="p-3.5 font-bold text-slate-800">{row[0]}</td>
-                      <td className="p-3.5 font-semibold text-slate-600">{row[1]}</td>
-                      <td className="p-3.5 font-semibold text-slate-600">{row[2]}</td>
-                      <td className="p-3.5 text-center font-bold text-slate-700">{row[3]}</td>
-                      <td className="p-3.5 text-center font-bold text-amber-600">{row[4]}</td>
-                      <td className="p-3.5 text-right font-black text-emerald-600">{row[5]}</td>
-                      <td className="p-3.5 text-right font-black text-slate-800">{row[6]}</td>
-                      <td className="p-3.5 text-right font-black text-slate-900 bg-slate-50">{row[7]}</td>
-                    </tr>
-                  ))}
+                  {activeModal === "drivers" && (
+                    selectedReportDriver ? (
+                      driverTripRows.slice(0, -1).map((row, idx) => (
+                        <tr key={idx} className="hover:bg-slate-50/60 transition">
+                          <td className="p-3.5 font-medium text-slate-500 whitespace-nowrap">{row[0]}</td>
+                          <td className="p-3.5"><span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-100 rounded-full px-2 py-0.5">{row[1]}</span></td>
+                          <td className="p-3.5 font-bold text-slate-800">{row[2]}</td>
+                          <td className="p-3.5 text-slate-500 max-w-[250px] truncate" title={row[3]}>{row[3]}</td>
+                          <td className="p-3.5 text-right font-semibold text-emerald-600">{row[4]}</td>
+                          <td className="p-3.5 text-right font-semibold text-slate-700">{row[5]}</td>
+                          <td className="p-3.5 text-right font-black text-slate-900 bg-slate-50/50">{row[6]}</td>
+                        </tr>
+                      ))
+                    ) : (
+                      driverSummaries.map((ds, idx) => (
+                        <tr key={idx} className="hover:bg-slate-50/60 transition">
+                          <td className="p-3.5 font-bold text-emerald-600 hover:underline cursor-pointer" onClick={() => setSelectedReportDriver({ id: ds.id, name: ds.name })}>
+                            👤 {ds.name} (Hap detajet ➔)
+                          </td>
+                          <td className="p-3.5 font-semibold text-slate-650">{ds.phone}</td>
+                          <td className="p-3.5 font-semibold text-slate-650">{ds.email}</td>
+                          <td className="p-3.5 text-center font-bold text-slate-700">{ds.bookingsCount}</td>
+                          <td className="p-3.5 text-center font-bold text-amber-600">{ds.avgRating}</td>
+                          <td className="p-3.5 text-right font-black text-emerald-600">{ds.driverShare} €</td>
+                          <td className="p-3.5 text-right font-black text-slate-850">{ds.companyShare} €</td>
+                          <td className="p-3.5 text-right font-black text-slate-900 bg-slate-50">{ds.totalGross} €</td>
+                        </tr>
+                      ))
+                    )
+                  )}
 
                   {activeModal === "platform" && platformEarningsRows.slice(0, -1).map((row, idx) => (
                     <tr key={idx} className="hover:bg-slate-50/60 transition">
@@ -1514,6 +1685,16 @@ export default function AdminPage() {
                       <td className="p-3.5 text-right font-black text-slate-600">{row[5]}</td>
                       <td className="p-3.5 text-right font-black text-emerald-600">{row[6]}</td>
                       <td className="p-3.5 text-center text-[10px] font-bold text-slate-500">{row[7]}</td>
+                    </tr>
+                  ))}
+
+                  {activeModal === "total_bookings" && driverBookingsSummary.map((ds, idx) => (
+                    <tr key={idx} className="hover:bg-slate-50/60 transition">
+                      <td className="p-3.5 font-bold text-slate-800">{ds.name}</td>
+                      <td className="p-3.5 text-center font-semibold text-slate-600">{ds.active}</td>
+                      <td className="p-3.5 text-center font-semibold text-emerald-600">{ds.completed}</td>
+                      <td className="p-3.5 text-center font-semibold text-rose-600">{ds.cancelled}</td>
+                      <td className="p-3.5 text-center font-black text-slate-900 bg-slate-50/50">{ds.total}</td>
                     </tr>
                   ))}
 
@@ -1530,17 +1711,33 @@ export default function AdminPage() {
                     </tr>
                   )}
 
-                  {activeModal === "drivers" && driversShareRows.length > 1 && (
-                    <tr className="bg-slate-100 border-t-2 border-slate-300 font-bold z-10 sticky bottom-0 text-slate-800">
-                      <td className="p-3.5">{driversShareRows[driversShareRows.length - 1][0]}</td>
-                      <td className="p-3.5">{driversShareRows[driversShareRows.length - 1][1]}</td>
-                      <td className="p-3.5">{driversShareRows[driversShareRows.length - 1][2]}</td>
-                      <td className="p-3.5 text-center text-sm font-black">{driversShareRows[driversShareRows.length - 1][3]}</td>
-                      <td className="p-3.5 text-center font-bold"></td>
-                      <td className="p-3.5 text-right text-sm text-emerald-600 font-black">{driversShareRows[driversShareRows.length - 1][5]}</td>
-                      <td className="p-3.5 text-right text-sm font-black">{driversShareRows[driversShareRows.length - 1][6]}</td>
-                      <td className="p-3.5 text-right text-base text-slate-900 font-black bg-slate-150">{driversShareRows[driversShareRows.length - 1][7]}</td>
-                    </tr>
+                  {activeModal === "drivers" && (
+                    selectedReportDriver ? (
+                      driverTripRows.length > 1 && (
+                        <tr className="bg-slate-100 border-t-2 border-slate-300 font-bold z-10 sticky bottom-0 text-slate-800">
+                          <td className="p-3.5">{driverTripRows[driverTripRows.length - 1][0]}</td>
+                          <td className="p-3.5">{driverTripRows[driverTripRows.length - 1][1]}</td>
+                          <td className="p-3.5"></td>
+                          <td className="p-3.5"></td>
+                          <td className="p-3.5 text-right text-sm text-emerald-600 font-black">{driverTripRows[driverTripRows.length - 1][4]}</td>
+                          <td className="p-3.5 text-right text-sm font-black">{driverTripRows[driverTripRows.length - 1][5]}</td>
+                          <td className="p-3.5 text-right text-base text-slate-900 font-black bg-slate-150">{driverTripRows[driverTripRows.length - 1][6]}</td>
+                        </tr>
+                      )
+                    ) : (
+                      driversShareRows.length > 1 && (
+                        <tr className="bg-slate-100 border-t-2 border-slate-300 font-bold z-10 sticky bottom-0 text-slate-800">
+                          <td className="p-3.5">{driversShareRows[driversShareRows.length - 1][0]}</td>
+                          <td className="p-3.5">{driversShareRows[driversShareRows.length - 1][1]}</td>
+                          <td className="p-3.5">{driversShareRows[driversShareRows.length - 1][2]}</td>
+                          <td className="p-3.5 text-center text-sm font-black">{driversShareRows[driversShareRows.length - 1][3]}</td>
+                          <td className="p-3.5 text-center font-bold"></td>
+                          <td className="p-3.5 text-right text-sm text-emerald-600 font-black">{driversShareRows[driversShareRows.length - 1][5]}</td>
+                          <td className="p-3.5 text-right text-sm font-black">{driversShareRows[driversShareRows.length - 1][6]}</td>
+                          <td className="p-3.5 text-right text-base text-slate-900 font-black bg-slate-150">{driversShareRows[driversShareRows.length - 1][7]}</td>
+                        </tr>
+                      )
+                    )
                   )}
 
                   {activeModal === "platform" && platformEarningsRows.length > 1 && (
@@ -1556,10 +1753,24 @@ export default function AdminPage() {
                     </tr>
                   )}
 
+                  {activeModal === "total_bookings" && (
+                    <tr className="bg-slate-100 border-t-2 border-slate-300 font-bold z-10 sticky bottom-0 text-slate-800">
+                      <td className="p-3.5">TOTALI</td>
+                      <td className="p-3.5 text-center text-slate-650">{driverBookingsSummary.reduce((sum, ds) => sum + ds.active, 0)}</td>
+                      <td className="p-3.5 text-center text-emerald-600">{driverBookingsSummary.reduce((sum, ds) => sum + ds.completed, 0)}</td>
+                      <td className="p-3.5 text-center text-rose-600">{driverBookingsSummary.reduce((sum, ds) => sum + ds.cancelled, 0)}</td>
+                      <td className="p-3.5 text-center text-base text-slate-900 font-black bg-slate-150">
+                        {driverBookingsSummary.reduce((sum, ds) => sum + ds.total, 0)}
+                      </td>
+                    </tr>
+                  )}
+
                   {/* Empty state for modal */}
                   {((activeModal === "revenue" && revenueRows.length <= 1) ||
-                    (activeModal === "drivers" && driversShareRows.length <= 1) ||
-                    (activeModal === "platform" && platformEarningsRows.length <= 1)) && (
+                    (activeModal === "drivers" && !selectedReportDriver && driversShareRows.length <= 1) ||
+                    (activeModal === "drivers" && selectedReportDriver && driverTripRows.length <= 1) ||
+                    (activeModal === "platform" && platformEarningsRows.length <= 1) ||
+                    (activeModal === "total_bookings" && driverBookingsSummary.length === 0)) && (
                     <tr>
                       <td colSpan={10} className="p-10 text-center text-slate-400 font-medium">
                         Nuk u gjetën të dhëna për këtë kërkim.
@@ -1576,6 +1787,111 @@ export default function AdminPage() {
                 onClick={() => {
                   setActiveModal(null);
                   setModalSearch("");
+                }}
+                className="rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold px-6 py-2.5 text-xs transition cursor-pointer"
+              >
+                Mbyll
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* Clients Management Modal */}
+      {isClientsModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-fade-in text-slate-800">
+          <div className="w-full max-w-5xl bg-white rounded-3xl border border-slate-200 shadow-2xl p-6 md:p-8 flex flex-col max-h-[90vh] animate-scale-in">
+            
+            {/* Modal Header */}
+            <div className="flex items-start justify-between border-b border-slate-200 pb-4 mb-6">
+              <div>
+                <h3 className="text-xl font-black text-slate-900 leading-tight">
+                  👥 Menaxhimi i Klientëve (Client Management)
+                </h3>
+                <p className="text-xs text-slate-450 mt-1">
+                  Këtu shfaqet lista e të gjithë klientëve që kanë kryer rezervime. Mund të dërgoni emaile për rivendosjen e fjalëkalimit.
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  setIsClientsModalOpen(false);
+                  setClientSearch("");
+                }}
+                className="text-2xl text-slate-455 hover:text-slate-900 leading-none p-1 cursor-pointer transition"
+              >
+                &times;
+              </button>
+            </div>
+
+            {/* Search Bar */}
+            <div className="mb-6 relative max-w-md">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs">🔍</span>
+              <input
+                value={clientSearch}
+                onChange={(e) => setClientSearch(e.target.value)}
+                placeholder="Kërko klient me Emër, Email, Telefon..."
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 pl-8 pr-4 py-2 text-xs text-slate-800 outline-none placeholder:text-slate-450 focus:bg-white focus:border-emerald-500/40 transition"
+              />
+            </div>
+
+            {/* Clients Table Container */}
+            <div className="flex-1 overflow-auto rounded-2xl border border-slate-200/60 custom-scrollbar shadow-inner bg-slate-50/50">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead className="sticky top-0 bg-slate-100 border-b border-slate-200 text-slate-700 font-bold z-10">
+                  <tr>
+                    <th className="p-3.5">Klienti (Name)</th>
+                    <th className="p-3.5">Telefon (Phone)</th>
+                    <th className="p-3.5">Email</th>
+                    <th className="p-3.5 text-center">Rezervime Gjithsej (Bookings)</th>
+                    <th className="p-3.5 text-right">Shuma e Shpenzuar (Total Spent)</th>
+                    <th className="p-3.5 text-center">Veprime (Actions)</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-150 bg-white">
+                  {uniqueClients
+                    .filter(c => {
+                      const text = `${c.name} ${c.email} ${c.phone}`.toLowerCase();
+                      return text.includes(clientSearch.toLowerCase());
+                    })
+                    .map((client, idx) => (
+                      <tr key={idx} className="hover:bg-slate-50/60 transition">
+                        <td className="p-3.5 font-bold text-slate-800">{client.name}</td>
+                        <td className="p-3.5 font-semibold text-slate-600">{client.phone}</td>
+                        <td className="p-3.5 font-semibold text-slate-600">{client.email}</td>
+                        <td className="p-3.5 text-center font-bold text-slate-700">{client.bookingsCount}</td>
+                        <td className="p-3.5 text-right font-black text-emerald-600">{client.totalSpent} €</td>
+                        <td className="p-3.5 text-center">
+                          <button
+                            onClick={() => handleResetClientPassword(client.email)}
+                            className="rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3.5 py-1.5 text-[10px] transition cursor-pointer"
+                          >
+                            🔑 Password Reset
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+
+                  {uniqueClients.filter(c => {
+                    const text = `${c.name} ${c.email} ${c.phone}`.toLowerCase();
+                    return text.includes(clientSearch.toLowerCase());
+                  }).length === 0 && (
+                    <tr>
+                      <td colSpan={6} className="p-10 text-center text-slate-400 font-medium">
+                        Nuk u gjet asnjë klient.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex justify-end gap-3 mt-6 border-t border-slate-150 pt-4">
+              <button
+                onClick={() => {
+                  setIsClientsModalOpen(false);
+                  setClientSearch("");
                 }}
                 className="rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold px-6 py-2.5 text-xs transition cursor-pointer"
               >

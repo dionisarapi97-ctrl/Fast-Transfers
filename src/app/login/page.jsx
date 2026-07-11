@@ -112,6 +112,17 @@ export default function LoginPage() {
   return (
     <main className="min-h-screen bg-[#07110f] text-white flex items-center justify-center p-6 relative">
       
+      {/* Floating Back to Home Top-Left */}
+      <div className="absolute top-6 left-6">
+        <button
+          onClick={() => router.push("/")}
+          className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 hover:bg-white/10 px-3.5 py-2 text-xs font-bold text-white transition duration-200 cursor-pointer"
+        >
+          <span>←</span>
+          <span>{language === "sq" ? "Kreu" : "Home"}</span>
+        </button>
+      </div>
+
       {/* Floating Language Switcher Top-Right */}
       <div className="absolute top-6 right-6" ref={dropdownRef}>
         <button
