@@ -1,4 +1,5 @@
 "use client";
+// Force Vercel build trigger - Ksamil photo update
 
 import { useState, useMemo } from "react";
 import { fixedFares } from "../data/fares";
