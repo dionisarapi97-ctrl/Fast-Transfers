@@ -12,7 +12,14 @@ export default function Footer() {
         
         {/* Brand Column */}
         <div className="md:col-span-4 space-y-5">
-          <h3 className="text-xl font-black text-slate-100 tracking-wider">Fast Transfers</h3>
+          <div className="flex items-center gap-3">
+            <img 
+              src="/images/logo.png" 
+              alt="Fast Transfers Logo" 
+              className="h-10 w-10 object-contain rounded-xl border border-emerald-500/20 shadow-md bg-slate-950/50" 
+            />
+            <h3 className="text-lg font-black text-slate-100 tracking-wider">Fast Transfers</h3>
+          </div>
           <p className="text-xs text-slate-400 leading-relaxed max-w-sm">
             {t("footer_desc")}
           </p>
