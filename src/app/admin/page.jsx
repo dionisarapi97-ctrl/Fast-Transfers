@@ -585,7 +585,7 @@ export default function AdminPage() {
 📏 *Distance:* ${booking.distance ? `${Number(booking.distance).toFixed(1)} km` : "-"}
 ⏱ *Est. Duration:* ${booking.duration || "-"}
 
-💶 *Total Fare:* ${booking.price || "-"} €
+💶 *TOTAL:* ${booking.price || "-"} €
 ----------------------------------------
 🚗 *Assigned Driver:* ${booking.driver_name || "None"}
 ⚙️ *Status:* ${booking.status || "Pending"}
