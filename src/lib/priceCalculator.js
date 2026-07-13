@@ -7,7 +7,7 @@ function isAirport(address = "") {
     text.includes("tirana international airport") ||
     text.includes("nënë tereza") ||
     text.includes("nene tereza") ||
-    text.includes("tia") ||
+    /\btia\b/i.test(text) ||
     text.includes("rinas")
   );
 }

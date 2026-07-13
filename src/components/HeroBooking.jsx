@@ -72,10 +72,10 @@ export default function HeroBooking() {
   const isAirportBooking =
     pickup.toLowerCase().includes("airport") ||
     pickup.toLowerCase().includes("rinas") ||
-    pickup.toLowerCase().includes("tia") ||
+    /\btia\b/i.test(pickup) ||
     dropoff.toLowerCase().includes("airport") ||
     dropoff.toLowerCase().includes("rinas") ||
-    dropoff.toLowerCase().includes("tia");
+    /\btia\b/i.test(dropoff);
 
   // Listen to autofill-booking event from popular destinations
   useEffect(() => {

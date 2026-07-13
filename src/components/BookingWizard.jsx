@@ -71,10 +71,10 @@ export default function BookingWizard() {
   const isAirportBooking =
     pickup.toLowerCase().includes("airport") ||
     pickup.toLowerCase().includes("rinas") ||
-    pickup.toLowerCase().includes("tia") ||
+    /\btia\b/i.test(pickup) ||
     dropoff.toLowerCase().includes("airport") ||
     dropoff.toLowerCase().includes("rinas") ||
-    dropoff.toLowerCase().includes("tia");
+    /\btia\b/i.test(dropoff);
 
   useEffect(() => {
     async function getRoute() {
