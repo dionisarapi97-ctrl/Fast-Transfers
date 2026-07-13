@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const filePath = "C:\\Users\\HP\\.gemini\\antigravity-ide\\brain\\5ac5c376-c49e-4dc7-a38a-733f05b0d219\\.system_generated\\steps\\1159\\content.md";
+const filePath = "C:\\Users\\HP\\.gemini\\antigravity-ide\\brain\\5ac5c376-c49e-4dc7-a38a-733f05b0d219\\.system_generated\\steps\\1173\\content.md";
 const content = fs.readFileSync(filePath, 'utf8');
 
 const index = content.indexOf('alt="Ksamil"');
