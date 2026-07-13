@@ -91,8 +91,8 @@ export default function Footer() {
       <div className="max-w-6xl mx-auto mt-14 pt-8 border-t border-slate-900 flex flex-col md:flex-row justify-between items-center gap-4 text-[10px] text-white/30">
         <p>&copy; {new Date().getFullYear()} Fast Transfers. {t("footer_rights")}</p>
         <div className="flex gap-4">
-          <a href="#" className="hover:text-slate-300 transition">{language === "sq" ? "Kushtet & Rregullat" : "Terms & Conditions"}</a>
-          <a href="#" className="hover:text-slate-300 transition">{language === "sq" ? "Politika e Privatësisë" : "Privacy Policy"}</a>
+          <a href="/terms" className="hover:text-slate-300 transition">{language === "sq" ? "Kushtet & Rregullat" : "Terms & Conditions"}</a>
+          <a href="/privacy" className="hover:text-slate-300 transition">{language === "sq" ? "Politika e Privatësisë" : "Privacy Policy"}</a>
         </div>
       </div>
     </footer>
