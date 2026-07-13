@@ -1251,24 +1251,33 @@ export default function AdminPage() {
                   <h3 className="text-xl font-black mt-1 text-slate-900 leading-tight">
                     {selectedBooking.customer_name || "Guest Client"}
                   </h3>
-                  <div className="flex flex-col gap-1 mt-1">
-
-                    href={`tel:${selectedBooking.customer_phone}`}
-                    className="text-xs text-emerald-600 hover:underline font-semibold"
-
-                    📞 {selectedBooking.customer_phone || "No phone"}
-
-
-
+                  <div className="flex flex-col gap-1 mt-1.5">
+                    <a
+                      href={`tel:${selectedBooking.customer_phone}`}
+                      className="text-xs text-emerald-600 hover:underline font-semibold flex items-center gap-1.5"
+                    >
+                      <span>📞</span> {selectedBooking.customer_phone || "No phone"}
+                    </a>
+                    {selectedBooking.customer_email && (
+                      <span className="text-[10px] text-slate-500 font-medium">
+                        📧 {selectedBooking.customer_email}
+                      </span>
+                    )}
                   </div>
                 </div>
 
-                <button
-                  onClick={() => setSelectedBooking(null)}
-                  className="text-xs text-slate-500 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-2.5 py-1 rounded-lg transition"
-                >
-                  Close Detail
-                </button>
+                <div className="flex flex-col items-end gap-2.5">
+                  <div className="text-right">
+                    <span className="text-2xl font-black text-slate-900 block leading-none">{selectedBooking.price} €</span>
+                    <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block mt-1">Total Price</span>
+                  </div>
+                  <button
+                    onClick={() => setSelectedBooking(null)}
+                    className="text-[10px] font-bold text-slate-500 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-2.5 py-1.5 rounded-xl transition cursor-pointer"
+                  >
+                    Close Detail
+                  </button>
+                </div>
               </div>
 
               {/* Section 1: Flight & Accommodation details */}
