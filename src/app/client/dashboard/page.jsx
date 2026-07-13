@@ -201,7 +201,7 @@ export default function ClientDashboard() {
 
         <div className="flex items-center gap-3 self-start md:self-center">
           <button
-            onClick={() => router.push("/")}
+            onClick={() => router.push("/booking")}
             className="rounded-full bg-[#00D084] hover:bg-[#00b06f] px-6 py-2.5 text-xs font-extrabold text-white transition-all duration-300 hover:scale-105 active:scale-95 shadow-[0_0_15px_rgba(0,208,132,0.25)] cursor-pointer"
           >
             {t("book_new_transfer")} 🚖

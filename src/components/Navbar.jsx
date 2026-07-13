@@ -84,11 +84,15 @@ export default function Navbar() {
   };
 
   const handleBookNow = () => {
-    const bookingCard = document.getElementById("booking-card");
-    if (bookingCard) {
-      bookingCard.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (session) {
+      router.push("/booking");
     } else {
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      const bookingCard = document.getElementById("booking-card");
+      if (bookingCard) {
+        bookingCard.scrollIntoView({ behavior: "smooth", block: "center" });
+      } else {
+        router.push("/booking");
+      }
     }
   };
 
