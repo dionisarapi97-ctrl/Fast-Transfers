@@ -38,8 +38,9 @@ export function calculatePrice(distanceKm, pickupAddress = "", dropoffAddress = 
     return fixedFare.price;
   }
 
-  const basePrice = 18;
-  const pricePerKm = 0.45;
+  const basePrice = 0;
+  const pricePerKm = 1.0;
 
-  return Math.round(basePrice + distanceKm * pricePerKm);
+  // Use 1 euro per km with a minimum price of 20 € for standard cars
+  return Math.max(20, Math.round(basePrice + distanceKm * pricePerKm));
 }
