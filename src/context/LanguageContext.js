@@ -6,7 +6,7 @@ import { translations } from "@/lib/translations";
 const LanguageContext = createContext();
 
 export function LanguageProvider({ children }) {
-  const [language, setLanguageState] = useState("sq"); // Default to SQ (Albanian)
+  const [language, setLanguageState] = useState("en"); // Default to EN (English) for Google Ads compliance
 
   useEffect(() => {
     try {
@@ -31,12 +31,17 @@ export function LanguageProvider({ children }) {
   };
 
   const t = (key, params = {}) => {
-    let str = translations[language]?.[key] || translations["sq"]?.[key] || key;
+    let str = translations[language]?.[key] || translations["en"]?.[key] || key;
     
     // Replace custom parameters like {step} or {total}
     Object.keys(params).forEach((paramKey) => {
       str = str.replace(`{${paramKey}}`, params[paramKey]);
     });
+    
+    // Fallback if translations didn't load properly or translation key is missing
+    if (!str || str === key) {
+      str = translations["en"]?.[key] || key;
+    }
     
     return str;
   };
@@ -53,7 +58,7 @@ export function useLanguage() {
   if (!context) {
     // Return mock values if loaded outside provider to avoid crashes during hydration
     return {
-      language: "sq",
+      language: "en",
       setLanguage: () => {},
       t: (key) => key
     };
