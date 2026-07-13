@@ -32,19 +32,20 @@ export default function RootLayout({ children }) {
     >
       <head>
         {/* Google tag (gtag.js) */}
-        <Script
+        <script
           async
           src="https://www.googletagmanager.com/gtag/js?id=AW-1831559779"
-          strategy="afterInteractive"
         />
-        <Script id="google-tag-init" strategy="afterInteractive">
-          {`
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', 'AW-1831559779');
-          `}
-        </Script>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', 'AW-1831559779');
+            `,
+          }}
+        />
       </head>
       <body className="min-h-full flex flex-col">
         <LanguageProvider>
