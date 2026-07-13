@@ -588,9 +588,6 @@ export default function AdminPage() {
 💶 *Total Fare:* ${booking.price || "-"} €
 ----------------------------------------
 🚗 *Assigned Driver:* ${booking.driver_name || "None"}
-💰 *Driver Payout:* ${booking.driver_share ? `${booking.driver_share} €` : "-"}
-🏢 *Company Share:* ${booking.company_share ? `${booking.company_share} €` : "-"}
-
 ⚙️ *Status:* ${booking.status || "Pending"}
 📝 *Admin Notes:* ${booking.admin_notes || "None"}
 ----------------------------------------`;
