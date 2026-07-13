@@ -96,12 +96,14 @@ export default function Navbar() {
 
   return (
     <nav className="fixed top-0 left-0 z-50 flex h-[90px] w-full items-center justify-between px-6 md:px-12 backdrop-blur-xl bg-slate-950/45 border-b border-slate-900/85">
-      <div className="flex items-center gap-3 cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
-        <img 
-          src="/images/logo.png" 
-          alt="Fast Transfers Logo" 
-          className="h-12 w-12 object-contain rounded-xl border border-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.15)] bg-slate-950/50" 
-        />
+      <div className="flex items-center gap-3 cursor-pointer group" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
+        <div className="logo-shimmer-container rounded-xl animate-logo-entrance">
+          <img 
+            src="/images/logo.png" 
+            alt="Fast Transfers Logo" 
+            className="h-12 w-12 object-contain rounded-xl border border-emerald-500/20 bg-slate-950/50 animate-logo-pulse hover:scale-105 transition-transform duration-300" 
+          />
+        </div>
         <div>
           <h2 className="text-lg md:text-xl font-black tracking-wider text-white">
             Fast Transfers

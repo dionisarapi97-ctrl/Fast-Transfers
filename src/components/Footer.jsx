@@ -12,12 +12,14 @@ export default function Footer() {
         
         {/* Brand Column */}
         <div className="md:col-span-4 space-y-5">
-          <div className="flex items-center gap-3">
-            <img 
-              src="/images/logo.png" 
-              alt="Fast Transfers Logo" 
-              className="h-10 w-10 object-contain rounded-xl border border-emerald-500/20 shadow-md bg-slate-950/50" 
-            />
+          <div className="flex items-center gap-3 group">
+            <div className="logo-shimmer-container rounded-xl">
+              <img 
+                src="/images/logo.png" 
+                alt="Fast Transfers Logo" 
+                className="h-10 w-10 object-contain rounded-xl border border-emerald-500/20 bg-slate-950/50 animate-logo-pulse hover:scale-105 transition-transform duration-300" 
+              />
+            </div>
             <h3 className="text-lg font-black text-slate-100 tracking-wider">Fast Transfers</h3>
           </div>
           <p className="text-xs text-slate-400 leading-relaxed max-w-sm">
