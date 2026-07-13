@@ -432,19 +432,38 @@ export default function HeroBooking() {
                   </div>
                 </div>
 
-                <div className="rounded-xl bg-emerald-950/5 border border-emerald-900/15 p-4 flex justify-between items-center shadow-sm">
-                  <div>
-                    <p className="text-[10px] text-emerald-455 uppercase tracking-wider font-semibold">{t("est_price")}</p>
-                    <p className="text-3xl font-black text-emerald-400 tracking-tight">
-                      {estimatedPrice ? `${estimatedPrice} €` : "..."}
+                <div className="rounded-xl bg-emerald-950/5 border border-emerald-900/15 p-4 flex flex-col gap-3.5 shadow-sm">
+                  <div className="flex justify-between items-center w-full">
+                    <div>
+                      <p className="text-[10px] text-emerald-455 uppercase tracking-wider font-semibold">{t("est_price")}</p>
+                      <p className="text-3xl font-black text-emerald-400 tracking-tight">
+                        {estimatedPrice ? `${estimatedPrice} €` : "..."}
+                      </p>
+                    </div>
+                    <p className="text-[9px] text-slate-500 text-right max-w-[170px] leading-relaxed">
+                      {language === "sq" 
+                        ? "*Çmimi fiks përfshin taksat rrugore, kohën e pritjes dhe bagazhet. Anullim falas deri në 24 orë para marrjes."
+                        : "*Fixed price includes tolls, wait time and luggage. Free cancellation up to 24h prior to pickup."
+                      }
                     </p>
                   </div>
-                  <p className="text-[9px] text-slate-500 text-right max-w-[170px] leading-relaxed">
-                    {language === "sq" 
-                      ? "*Çmimi fiks përfshin taksat rrugore, kohën e pritjes dhe bagazhet. Anullim falas deri në 24 orë para marrjes."
-                      : "*Fixed price includes tolls, wait time and luggage. Free cancellation up to 24h prior to pickup."
-                    }
-                  </p>
+                  {estimatedPrice && (
+                    <a
+                      href={`https://wa.me/355693048000?text=${encodeURIComponent(
+                        language === "sq"
+                          ? `Përshëndetje! Dua të negocioj një çmim më të mirë për rezervimin tim:\nNisja: ${pickup}\nMbërritja: ${dropoff}\nDistanca: ${routeInfo?.distanceText || ""}\nUdhëtarë: ${passengers}\nÇmimi i parashikuar: ${estimatedPrice} €`
+                          : `Hi! I want to negotiate a better price for my transfer booking:\nFrom: ${pickup}\nTo: ${dropoff}\nDistance: ${routeInfo?.distanceText || ""}\nPassengers: ${passengers}\nEstimated Price: ${estimatedPrice} €`
+                      )}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full flex items-center justify-center gap-2 rounded-xl bg-emerald-600/15 hover:bg-emerald-600/25 border border-emerald-500/30 py-2.5 text-xs font-bold text-emerald-450 hover:text-emerald-400 transition-all active:scale-95 duration-200 cursor-pointer"
+                    >
+                      <svg className="w-4 h-4 fill-current text-emerald-450" viewBox="0 0 24 24">
+                        <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.724-1.455L0 24zm6.59-4.846c1.62.962 3.21 1.48 4.887 1.481 5.423 0 9.837-4.414 9.84-9.84.002-2.623-1.01-5.086-2.855-6.936C16.678 3.86 14.238 2.855 11.622 2.855c-5.42 0-9.833 4.414-9.836 9.84-.001 1.79.479 3.534 1.39 5.097l-.951 3.473 3.565-.935zm12.59-7.291c-.3-.149-1.777-.878-2.047-.978-.27-.099-.467-.149-.662.149-.195.298-.753.978-.923 1.177-.17.199-.34.224-.64.075-.3-.15-1.265-.467-2.41-1.487-.89-.795-1.49-1.77-1.665-2.07-.175-.3-.019-.461.13-.61.135-.133.3-.349.45-.523.15-.174.2-.298.3-.497.1-.198.05-.372-.025-.521-.075-.149-.662-1.593-.907-2.189-.238-.574-.48-.497-.662-.506-.17-.008-.365-.01-.56-.01s-.514.074-.783.372c-.269.299-1.025 1.002-1.025 2.443 0 1.441 1.049 2.83 1.194 3.029.145.198 2.062 3.149 4.995 4.417.697.302 1.24.482 1.66.617.7.222 1.338.19 1.843.115.564-.084 1.778-.727 2.028-1.43.25-.702.25-1.303.175-1.43-.075-.127-.27-.201-.57-.35z" />
+                      </svg>
+                      {language === "sq" ? "Negocio Çmimin në WhatsApp" : "Negotiate Price on WhatsApp"}
+                    </a>
+                  )}
                 </div>
 
                 {/* Privacy Disclaimer Checkbox */}
