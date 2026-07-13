@@ -4,10 +4,12 @@ import Destinations from "../components/Destinations";
 import WhyUs from "../components/WhyUs";
 import FAQ from "../components/FAQ";
 import Footer from "../components/Footer";
+import Preloader from "../components/Preloader";
 
 export default function Home() {
   return (
     <main className="bg-[#07110f] text-white min-h-screen">
+      <Preloader />
       <Navbar />
       <section id="hero">
         <HeroBooking />
