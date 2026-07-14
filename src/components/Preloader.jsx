@@ -16,10 +16,10 @@ export default function Preloader() {
     document.body.style.overflow = "hidden";
     setVisible(true);
 
-    // Backup timer to trigger fadeout after 4.5s in case video loads slowly or gets stuck
+    // Backup timer to trigger fadeout after 9.5s in case video loads slowly or gets stuck
     const timer = setTimeout(() => {
       triggerFadeout();
-    }, 4500);
+    }, 9500);
 
     return () => {
       clearTimeout(timer);
