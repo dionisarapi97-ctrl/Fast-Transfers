@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import GooglePlacesInput from "./GooglePlacesInput";
 import { calculatePrice } from "@/lib/priceCalculator";
@@ -16,6 +16,7 @@ export default function BookingWizard() {
   const router = useRouter();
   const { t, language } = useLanguage();
   const [step, setStep] = useState(1);
+  const isSubmittingRef = useRef(false);
 
   const [customerName, setCustomerName] = useState("");
   const [phonePrefix, setPhonePrefix] = useState("+355");
@@ -146,11 +147,13 @@ export default function BookingWizard() {
   };
 
   const handleConfirmBooking = async () => {
+    if (isSubmittingRef.current) return;
     if (!canConfirm) {
       alert("Please complete all booking details.");
       return;
     }
 
+    isSubmittingRef.current = true;
     setIsSaving(true);
 
     const bookingId = generateBookingId();
@@ -207,43 +210,42 @@ export default function BookingWizard() {
       error = fallbackResult.error;
     }
 
-    setIsSaving(false);
-
     if (error) {
+      isSubmittingRef.current = false;
+      setIsSaving(false);
       alert(error.message);
       return;
     }
 
-    try {
-      await fetch("/api/send-email", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          type: "creation",
-          bookingId,
-          customerName,
-          customerPhone,
-          to: customerEmail || null,
-          pickup,
-          pickupDetails,
-          dropoff,
-          dropoffDetails,
-          date,
-          time,
-          price: estimatedPrice,
-          passengers,
-          luggage,
-          flightNumber,
-          hotelName,
-          distance: routeInfo?.distanceText || null,
-          duration: routeInfo?.durationText || null,
-        }),
-      });
-    } catch (emailErr) {
+    // Trigger email sending in background (don't block UI redirect)
+    fetch("/api/send-email", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        type: "creation",
+        bookingId,
+        customerName,
+        customerPhone,
+        to: customerEmail || null,
+        pickup,
+        pickupDetails,
+        dropoff,
+        dropoffDetails,
+        date,
+        time,
+        price: estimatedPrice,
+        passengers,
+        luggage,
+        flightNumber,
+        hotelName,
+        distance: routeInfo?.distanceText || null,
+        duration: routeInfo?.durationText || null,
+      }),
+    }).catch((emailErr) => {
       console.error("Error triggering reservation email:", emailErr);
-    }
+    });
 
     router.push(`/booking/success?id=${bookingId}`);
   };
