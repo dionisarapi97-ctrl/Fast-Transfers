@@ -214,6 +214,37 @@ export default function BookingWizard() {
       return;
     }
 
+    try {
+      await fetch("/api/send-email", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          type: "creation",
+          bookingId,
+          customerName,
+          customerPhone,
+          to: customerEmail || null,
+          pickup,
+          pickupDetails,
+          dropoff,
+          dropoffDetails,
+          date,
+          time,
+          price: estimatedPrice,
+          passengers,
+          luggage,
+          flightNumber,
+          hotelName,
+          distance: routeInfo?.distanceText || null,
+          duration: routeInfo?.durationText || null,
+        }),
+      });
+    } catch (emailErr) {
+      console.error("Error triggering reservation email:", emailErr);
+    }
+
     router.push(`/booking/success?id=${bookingId}`);
   };
 
@@ -261,6 +292,14 @@ export default function BookingWizard() {
               />
             </div>
           </div>
+
+          <Input
+            label={language === "sq" ? `${t("email_label")} (Opsionale)` : `${t("email_label")} (Optional)`}
+            type="email"
+            value={customerEmail}
+            onChange={setCustomerEmail}
+            placeholder="example@email.com"
+          />
 
           <GooglePlacesInput
             label={t("pickup_location")}

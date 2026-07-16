@@ -415,6 +415,8 @@ export default function AdminPage() {
   }, [bookings, monthlyBookings, isZeroPeriod]);
 
   async function updateBooking(id, values) {
+    const booking = bookings.find((b) => b.id === id);
+
     const { error } = await supabase
       .from("bookings")
       .update(values)
@@ -425,7 +427,31 @@ export default function AdminPage() {
       return;
     }
 
-
+    // Trigger status update email if the booking has a customer email
+    if (values.status && booking && booking.customer_email) {
+      try {
+        await fetch("/api/send-email", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            type: "status_update",
+            status: values.status,
+            to: booking.customer_email,
+            bookingId: booking.booking_id,
+            customerName: booking.customer_name,
+            pickup: booking.pickup,
+            dropoff: booking.dropoff,
+            date: booking.travel_date,
+            time: booking.travel_time,
+            price: booking.price,
+          }),
+        });
+      } catch (emailErr) {
+        console.error("Error sending status update email:", emailErr);
+      }
+    }
 
     // Update local states directly for responsiveness
     setBookings(prev => prev.map(b => b.id === id ? { ...b, ...values } : b));
